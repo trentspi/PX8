@@ -96,12 +96,13 @@ cd PX8
 
 ### Binaries
 
-Or you can get binaries for multiples platforms directly on [itch.io](https://hallucino.itch.io/px8):
+Or you can get latest binaries for multiples platforms directly on [itch.io](https://hallucino.itch.io/px8):
   * Raspberry Pi (available)
+  * OSX (available)
   * Windows (Work in progress)
   * Linux (Work in progress)
-  * Mac (Work in progress)
 
+and old binaries could be obtain for free.
 
 ## Requirements
 
@@ -112,7 +113,7 @@ You will need multiple things:
 
 #### Linux
 
-Packages:
+Packages for Debian/Ubuntu:
   * libsdl2-dev
   * libreadline-dev
   * libpython3-dev
@@ -126,7 +127,18 @@ sudo raspi-config
 
 #### OSX
 
+Install external dependencies via brew:
+   * brew install python3
+   * brew install sdl2
+   * brew install readline
+   
+Right now you need to export the DYLD_FALLBACK_LIBRARY_PATH env variable for the python support, e.g:
+   * export DYLD_FALLBACK_LIBRARY_PATH=/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib
+
+
 ## Build
+
+**The first thing to do is to install Rust, so please go to [rustup](https://www.rustup.rs/) and follow all instructions.**
 
 You could build PX8 with cargo directly, in release mode for example, with the support of Python and Lua.
 
@@ -212,6 +224,10 @@ or some fancy demos:
 ./target/release/px8 -s 4 ./demos/demos.py
 ./target/release/px8 -s 4 ./demos/voxel/voxel.px8
 ./target/release/px8 -s 4 ./demos/pong/pong.px8
+./target/release/px8 -s 4 ./games/ski/ski.px8
+./target/release/px8 -s 4 ./games/amp/amp.px8
+./target/release/px8 -s 4 ./games/terrain/terrain.px8
+./target/release/px8 -s 4 ./games/BR/BR.px8
 ```
 
 ## Edit a cartridge
@@ -257,7 +273,7 @@ You will be able to find more technical documentation in the [wiki](https://gith
 You can create a classical Python program, all you need is to define the previous functions (_init, _update, _draw), and you can import any packages.
 
 
-```
+```py
 def _init():
   px8_print("INIT")
   
@@ -270,7 +286,7 @@ def _draw():
 
 ### Lua
 
-```
+```lua
 function _init()
   print("INIT")
 end

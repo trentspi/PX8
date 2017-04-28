@@ -459,13 +459,13 @@ impl Px8New {
         if self.show_info_overlay {
             self.screen.lock().unwrap().rectfill(0, 0, SCREEN_WIDTH as i32, 8, 0);
 
-            self.screen.lock().unwrap().print(format!("{:.0}FPS {:.2} {:.2} {:?}",
-                                                      self.fps,
-                                                      self.draw_time,
-                                                      self.update_time,
-                                                      &self.palettes.lock().unwrap().name).to_string(),
-                                              0, 0,
-                                              7);
+            self.screen.lock().unwrap().force_print(format!("{:.0}FPS {:.2} {:.2} {:?}",
+                                                            self.fps,
+                                                            self.draw_time,
+                                                            self.update_time,
+                                                            &self.palettes.lock().unwrap().name).to_string(),
+                                                    0, 0,
+                                                    7);
         }
     }
 
@@ -620,10 +620,10 @@ impl Px8New {
         image.save(&mut output, image::ImageFormat::PNG).unwrap();
     }
 
-    pub fn save_current_cartridge(&mut self, suffix: String) {
+    pub fn save_current_cartridge(&mut self) {
         let ref mut cartridge = self.cartridges[self.current_cartridge];
 
-        let output_filename = cartridge.filename.clone() + "-" + &suffix + ".p8";
+        let output_filename = cartridge.filename.clone();
         info!("Saving the current cartridge in {:?}", output_filename);
 
         cartridge.gfx.set_sprites(self.screen.lock().unwrap().sprites.clone());
@@ -787,7 +787,7 @@ impl Px8New {
             self.code_type = Code::PYTHON;
         }
 
-        println!("CODE -> {:?}", data);
+        debug!("CODE -> {:?}", data);
 
         match self.code_type {
             Code::LUA => {
@@ -844,7 +844,7 @@ impl Px8New {
             data = self.cartridges[idx].code.get_data().clone();
         }
 
-        println!("CODE -> {:?}", data);
+        debug!("CODE -> {:?}", data);
 
         match self.code_type {
             Code::LUA => {
