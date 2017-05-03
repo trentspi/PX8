@@ -10,6 +10,7 @@ extern crate getopts;
 
 extern crate nalgebra;
 
+#[cfg(feature = "gfx_rs_renderer")]
 #[macro_use]
 extern crate gfx as gfx_rs;
 
@@ -35,12 +36,13 @@ extern crate fern;
 #[macro_use]
 extern crate lazy_static;
 
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
-extern crate futures;
-extern crate tokio_core;
-extern crate tokio_proto;
-extern crate tokio_service;
+extern crate num_traits;
+extern crate noise;
 
 use std::env;
 use getopts::Options;
@@ -182,12 +184,9 @@ fn main() {
             fullscreen = true;
         }
 
-        let mut opengl = true;
-        if cfg!(feature = "sdl_renderer") {
-            opengl = false;
-            if matches.opt_present("o") {
-                opengl = true;
-            }
+        let mut opengl = false;
+        if matches.opt_present("o") {
+            opengl = true;
         }
 
         let mut mode = px8::PX8Mode::PX8;

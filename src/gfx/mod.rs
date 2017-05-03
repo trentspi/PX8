@@ -1,15 +1,13 @@
 use std::fmt;
 use std::collections::HashMap;
-use nalgebra::{Rotation2, Dynamic, Matrix, MatrixVec};
+use nalgebra::{Dynamic, Matrix, MatrixVec};
 
 use px8;
 
-/// Emulated screen width in pixels
+/// Screen width in pixels
 pub const SCREEN_WIDTH: usize = px8::SCREEN_WIDTH;
-/// Emulated screen height in ixels
+///  Screen height in pixels
 pub const SCREEN_HEIGHT: usize = px8::SCREEN_HEIGHT;
-/// Screen texture size in bytes
-pub const SCREEN_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT;
 
 pub const GLYPH : [[u16; 2]; 95]  = [
     [0x0000, 0x0000], // space
@@ -523,10 +521,8 @@ impl Screen {
 
         // Clipped
         if self.clipping.clipped {
-            if !(x_i >= self.clipping.x && x_i <= self.clipping.x + self.clipping.w) {
-                return;
-            }
-            if !(y_i >= self.clipping.y && y_i <= self.clipping.y + self.clipping.h) {
+            if !(x_i >= (self.clipping.x - self.camera.x) && x_i < (self.clipping.x + self.clipping.w - self.camera.x) &&
+                 y_i >= (self.clipping.y - self.camera.y) && y_i < (self.clipping.y + self.clipping.h - self.camera.y)) {
                 return;
             }
         }
@@ -555,6 +551,9 @@ impl Screen {
     }
 
     pub fn getpixel(&mut self, x: usize, y: usize) -> u32 {
+        let x = (x as i32 - self.camera.x) as usize;
+        let y = (y as i32 - self.camera.y) as usize;
+
         if x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT {
             return 0;
         }
@@ -750,10 +749,6 @@ impl Screen {
         // reset
         if x == -1 && y == -1 && w == -1 && h == -1 {
             self.clipping.clipped = false;
-        }
-
-        // invalid clipping value
-        if x == -1 || y == -1 || w == -1 || h == -1 {
             return;
         }
 
@@ -814,8 +809,6 @@ impl Screen {
 
             h = (ix + 32) >> 6;
             i = (iy + 32) >> 6;
-            j = (h * ry) / rx;
-            k = (i * ry) / rx;
 
             while i > h {
                 h = (ix + 32) >> 6;
@@ -866,8 +859,6 @@ impl Screen {
 
             h = (ix + 32) >> 6;
             i = (iy + 32) >> 6;
-            j = (h * rx) / ry;
-            k = (i * rx) / ry;
 
             while i > h {
                 h = (ix + 32) >> 6;
@@ -950,8 +941,6 @@ impl Screen {
 
             h = (ix + 32) >> 6;
             i = (iy + 32) >> 6;
-            j = (h * ry) / rx;
-            k = (i * ry) / rx;
 
             while i > h {
                 h = (ix + 32) >> 6;
@@ -991,8 +980,6 @@ impl Screen {
 
             h = (ix + 32) >> 6;
             i = (iy + 32) >> 6;
-            j = (h * rx) / ry;
-            k = (i * rx) / ry;
 
             while i > h {
                 h = (ix + 32) >> 6;
@@ -1179,7 +1166,7 @@ impl Screen {
     }
 
     pub fn map(&mut self, cel_x: u32, cel_y: u32, sx: i32, sy: i32, cel_w: u32, cel_h: u32, layer: u8) {
-        let mut idx_x: i32 = 0;
+        let mut idx_x;
         let mut idx_y: i32 = 0;
 
         let mut cel_w = cel_w;
@@ -1376,13 +1363,13 @@ impl Screen {
         return self.back_buffer[addr as usize] << 8 + self.back_buffer[(addr + 1) as usize];
     }
 
-    pub fn poke(&mut self, addr: u32, val: u16) {}
+    pub fn poke(&mut self, _addr: u32, _val: u16) {}
 
     pub fn memcpy(&mut self, dest_addr: u32, source_addr: u32, len: u32) {
         let mut idx = 0;
 
-        let mut dest_addr = dest_addr * 2;
-        let mut source_addr = source_addr * 2;
+        let dest_addr = dest_addr * 2;
+        let source_addr = source_addr * 2;
 
         debug!("MEMPCY dest_addr {:?}, source_addr {:?}, len {:?}", dest_addr, source_addr, len);
 
@@ -1401,6 +1388,6 @@ impl Screen {
         }
     }
 
-    pub fn memset(&mut self, dest_addr: u32, val: u32, len: u32) {}
+    pub fn memset(&mut self, _dest_addr: u32, _val: u32, _len: u32) {}
 
 }

@@ -1,4 +1,5 @@
 #[cfg(feature = "cpython")]
+#[allow(unused_variables)]
 pub mod plugin {
     use cpython::*;
 
@@ -9,6 +10,7 @@ pub mod plugin {
     use config::Players;
     use px8::info::Info;
     use px8::Palettes;
+    use px8::noise::Noise;
     use gfx::Screen;
     use sound::sound::Sound;
 
@@ -275,7 +277,6 @@ pub mod plugin {
     py_class!(class PX8Memory |py| {
     data screen: Arc < Mutex < Screen > >;
 
-    // Others
     def memcpy(&self, dest_addr: u32, source_addr: u32, len: u32) -> PyResult<u32> {
         self.screen(py).lock().unwrap().memcpy(dest_addr, source_addr, len);
         Ok(0)
@@ -283,15 +284,27 @@ pub mod plugin {
 
     });
 
-    // Peek/Poke
+    // Noise
+    py_class!(class PX8Noise |py| {
+    data noise: Arc < Mutex < Noise > >;
+        def get(&self, x: f64, y: f64, z: f64) -> PyResult<f64> {
+            Ok(self.noise(py).lock().unwrap().get(x, y, z))
+        }
 
+        def set_seed(&self, seed: u32) -> PyResult<u32> {
+            self.noise(py).lock().unwrap().set_seed(seed);
+            Ok(0)
+        }
+    });
+
+
+    // Others
     py_class!(class PX8Sys |py| {
     data info: Arc < Mutex <Info > >;
 
-    // Others
-    def time(&self) -> PyResult<f64> {
-        Ok(self.info(py).lock().unwrap().elapsed_time)
-    }
+        def time(&self) -> PyResult<f64> {
+            Ok(self.info(py).lock().unwrap().elapsed_time)
+        }
 
     });
 
@@ -316,8 +329,9 @@ pub mod plugin {
                     players: Arc<Mutex<Players>>,
                     info: Arc<Mutex<Info>>,
                     screen: Arc<Mutex<Screen>>,
-                    sound: Arc<Mutex<Sound>>) {
-            info!("INIT PYTHON plugin");
+                    sound: Arc<Mutex<Sound>>,
+                    noise: Arc<Mutex<Noise>>) {
+            info!("[PLUGIN][PYTHON] Init plugin");
 
             let gil = Python::acquire_gil();
             let py = gil.python();
@@ -345,9 +359,14 @@ pub mod plugin {
             let px8_sys_obj = PX8Sys::create_instance(py,
                                                       info.clone()).unwrap();
             self.mydict.set_item(py, "px8_sys", px8_sys_obj).unwrap();
+
             let px8_mem_obj = PX8Memory::create_instance(py,
                                                          screen.clone()).unwrap();
             self.mydict.set_item(py, "px8_mem", px8_mem_obj).unwrap();
+
+            let px8_noise_obj = PX8Noise::create_instance(py,
+                                                          noise.clone()).unwrap();
+            self.mydict.set_item(py, "px8_noise", px8_noise_obj).unwrap();
 
             py.run(r###"globals()["px8_graphic"] = px8_graphic;"###, None, Some(&self.mydict)).unwrap();
             py.run(r###"globals()["px8_audio"] = px8_audio;"###, None, Some(&self.mydict)).unwrap();
@@ -356,6 +375,7 @@ pub mod plugin {
             py.run(r###"globals()["px8_map"] = px8_map;"###, None, Some(&self.mydict)).unwrap();
             py.run(r###"globals()["px8_sys"] = px8_sys;"###, None, Some(&self.mydict)).unwrap();
             py.run(r###"globals()["px8_mem"] = px8_mem;"###, None, Some(&self.mydict)).unwrap();
+            py.run(r###"globals()["px8_noise"] = px8_noise;"###, None, Some(&self.mydict)).unwrap();
 
             let mut f = File::open("./sys/config/api.py").unwrap();
             let mut data = String::new();
@@ -364,17 +384,17 @@ pub mod plugin {
             let result = py.run(&data, None, None);
             match result {
                 Err(v) => {
-                    panic!("FAILED TO LOAD PYTHON API = {:?}", v);
+                    panic!("[PLUGIN][PYTHON] Failed to load the plugin = {:?}", v);
                 }
                 Ok(v) => {
-                    info!("SUCCESSFULLY LOAD PYTHON API = {:?}", v);
+                    info!("[PLUGIN][PYTHON] Successfully loaded = {:?}", v);
                 }
             }
         }
 
 
         pub fn init(&mut self) {
-            info!("CALL INIT");
+            info!("[PLUGIN][PYTHON] Call INIT");
 
             if !self.loaded_code {
                 return;
@@ -384,12 +404,12 @@ pub mod plugin {
             let py = gil.python();
 
             let result = py.run(r###"_init()"###, None, Some(&self.mydict));
-            info!("RES INIT = {:?}", result);
+            info!("[PLUGIN][PYTHON] INIT -> {:?}", result);
         }
 
         pub fn draw(&mut self) -> bool {
             let mut return_draw_value = true;
-            debug!("CALL DRAW");
+            debug!("[PLUGIN][PYTHON] Call DRAW");
 
             if ! self.loaded_code {
                 return false;
@@ -403,7 +423,7 @@ pub mod plugin {
             match result {
                 Err(v) => {
                     return_draw_value = false;
-                    warn!("DRAW = {:?}", v);
+                    warn!("[PLUGIN][PYTHON] DRAW = {:?}", v);
                 },
                 Ok(v) => {
                     match v.extract(py) {
@@ -420,7 +440,7 @@ pub mod plugin {
 
         pub fn update(&mut self) -> bool {
             let mut return_update_value = true;
-            debug!("CALL UPDATE");
+            debug!("[PLUGIN][PYTHON] Call UPDATE");
 
             if !self.loaded_code {
                 return false;
@@ -434,7 +454,7 @@ pub mod plugin {
             match result {
                 Err(v) => {
                     return_update_value = false;
-                    warn!("UPDATE = {:?}", v);
+                    warn!("[PLUGIN][PYTHON] UPDATE = {:?}", v);
                 },
                 Ok(v) => {
                     match v.extract(py) {
@@ -451,21 +471,20 @@ pub mod plugin {
 
 
         pub fn load_code(&mut self, data: String) -> bool {
-            info!("LOAD CODE");
+            info!("[PLUGIN][PYTHON] Load the code");
             let gil = Python::acquire_gil();
             let py = gil.python();
 
 
             let result = py.run(&data, None, None);
-            debug!("RES CODE = {:?}", result);
 
             match result {
                 Ok(_) => {
-                    debug!("Code loaded successfully");
+                    debug!("[PLUGIN][PYTHON] Code loaded successfully");
                     self.loaded_code = true
                 },
                 Err(err) => {
-                    error!("Load code error => {:?}", err);
+                    error!("[PLUGIN][PYTHON] Load code error => {:?}", err);
                     self.loaded_code = false
                 },
             }
@@ -486,7 +505,8 @@ pub mod plugin {
 
     use gfx::Screen;
     use px8::Palettes;
-    use sound::Sound;
+    use sound::sound::Sound;
+    use px8::noise::Noise;
 
     pub struct PythonPlugin {}
 
@@ -501,8 +521,9 @@ pub mod plugin {
                     players: Arc<Mutex<Players>>,
                     info: Arc<Mutex<Info>>,
                     screen: Arc<Mutex<Screen>>,
-                    sound: Arc<Mutex<Sound>>) {
-            panic!("PYTHON plugin disabled");
+                    sound: Arc<Mutex<Sound>>,
+                    noise: Arc<Mutex<Noise>>) {
+            panic!("[PLUGIN][PYTHON] plugin disabled");
         }
         pub fn init(&mut self) {}
         pub fn draw(&mut self) -> bool { return false; }

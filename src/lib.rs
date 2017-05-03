@@ -10,9 +10,6 @@ extern crate getopts;
 
 extern crate nalgebra;
 
-#[macro_use]
-extern crate gfx as gfx_rs;
-
 extern crate image;
 extern crate gif;
 
@@ -35,7 +32,13 @@ extern crate fern;
 #[macro_use]
 extern crate lazy_static;
 
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
+
+extern crate num_traits;
+extern crate noise;
 
 #[macro_use]
 pub mod config;

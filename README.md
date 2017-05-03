@@ -11,7 +11,6 @@
   </a>
 </p>
 
-
 # PX8
 
   * [Demos](#demos)
@@ -51,8 +50,10 @@ It is still in development, but it is usable and the main features are:
  
 It works on all platforms (Linux/OSX/Windows), in the browser (via Emscripten), and on tiny hardware like Raspberry Pi 2/3.
 
-The console is inspired from the awesome [Pico-8](http://www.lexaloffle.com/pico-8.php), so there is a [compatibility](https://github.com/Gigoteur/PX8/wiki/Pico-8-compatibility) mode (not 100%) available with Pico-8 console and cartridges (P8/PNG).
+The console is inspired from the awesome [Pico-8](http://www.lexaloffle.com/pico-8.php), so there is a [compatibility](https://github.com/Gigoteur/PX8/wiki/Pico-8-compatibility) mode (not 100%, and it is not the goal of the project) available with Pico-8 console and cartridges (P8/PNG).
   
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T9NLJWMVWRMVU&lc=FR&item_name=Gigoteur&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+
 ## Demos
 **The time for each frame is slow (10ms) in the GIF, and doesn't correspond to the speed of the game.**
 
@@ -67,6 +68,8 @@ The console is inspired from the awesome [Pico-8](http://www.lexaloffle.com/pico
 ![](https://j.gifs.com/vgw08V.gif)
 
 ![](https://j.gifs.com/k5gVw5.gif)
+
+![](http://i.imgur.com/um3gmWh.gif)
 
 Editor mode:
 
@@ -85,6 +88,11 @@ https://github.com/Gigoteur/PX8/tree/master/games/terrain
 * Voxel framework (http://www.lexaloffle.com/bbs/?tid=28308) in Python
 https://github.com/Gigoteur/PX8/tree/master/demos/voxel
 ![](http://i.imgur.com/b1wE1cs.gif)
+
+* BR: Mix between duckduckontheloose (https://github.com/seleb/DuckDuckOnTheLoose) and dark tomb (http://www.lexaloffle.com/bbs/?tid=28785)
+https://github.com/Gigoteur/PX8/tree/master/games/BR
+![](http://i.imgur.com/Xp3v1Lj.gif)
+
 
 ## Download
 
@@ -197,11 +205,11 @@ Player 2:
   * ESDF, LSHIFT,A / TAB,Q,E
 
 System shortcut:
-  * F2: FPS debug
-  * F3: Take a screenshot
-  * F4: Take a video
+  * F2: Information debug (FPS, time execution (draw,update), palette name)
+  * F3: Take a screenshot (png)
+  * F4: Take a video (gif)
   * F5: Save the current cartridge
-  * F6: Switch between editor/play mode
+  * F6: Switch between editor/play mode (if opened with editor)
   * F7: Switch to the next available palette
   
 ## Run a cartridge
@@ -323,7 +331,6 @@ cursor | :red_circle: | :red_circle: | :red_circle:
 ellipse | :white_check_mark: | :white_check_mark: | :white_check_mark:
 ellipsefill | :white_check_mark: | :white_check_mark: | :white_check_mark:
 fget | :white_check_mark: | :white_check_mark: | :white_check_mark:
-flip | :red_circle: | :red_circle: | :red_circle:
 fset | :white_check_mark: | :white_check_mark: | :white_check_mark:
 line | :white_check_mark: | :white_check_mark: | :white_check_mark:
 pal | :white_check_mark: | :white_check_mark: | :white_check_mark:
@@ -331,6 +338,8 @@ palt | :white_check_mark: | :white_check_mark: | :white_check_mark:
 pget | :white_check_mark: | :white_check_mark: | :white_check_mark:
 print | :white_check_mark: | :white_check_mark: | :white_check_mark:
 pset | :white_check_mark: | :white_check_mark: | :white_check_mark:
+noise | :white_check_mark: | :white_check_mark: | :red_circle:
+noise_set_feed | :white_check_mark: | :white_check_mark: | :red_circle:
 rect | :white_check_mark: | :white_check_mark: | :white_check_mark:
 rectfill | :white_check_mark: | :white_check_mark: | :white_check_mark:
 sget | :white_check_mark: | :white_check_mark: | :white_check_mark:
