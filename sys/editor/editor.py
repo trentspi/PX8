@@ -243,7 +243,47 @@ class SpriteEditor(object):
              8*8, 8*8)
 
 class MapEditor(object):
-    pass
+    def __init__(self, state):
+        self.state = state
+        self.offset_x = 0
+        self.offset_y = 0
+
+        self._cache = [0] * (128*32)
+
+        for y in range(0, 32):
+            for x in range(0, 128):
+                self._cache[x + y * 128] = mget(x, y)
+
+    def update(self):
+        if btn(0):
+            self.offset_x -= 1
+            self.offset_x = max(-5, self.offset_x)
+        if btn(1):
+            self.offset_x += 1
+            self.offset_x = min(112, self.offset_x)
+        if btn(2):
+            self.offset_y -= 1
+            self.offset_y = max(-5, self.offset_y)
+        if btn(3):
+            self.offset_y += 1
+            self.offset_y = min(24, self.offset_y)
+
+
+    def draw(self):
+        rectfill(0, 8, 128, 78, 0)
+
+        idx_y = 0
+        for y in range(self.offset_y, self.offset_y + 8):
+            idx_x = 0
+            for x in range(self.offset_x, self.offset_x + 16):
+                offset = x + y * 128
+                sprite_number = self._cache[offset]
+                if sprite_number != 0:
+                    spr(self._cache[offset], idx_x * 8, idx_y * 8 + 9)
+                idx_x += 1
+            idx_y += 1
+
+        px8_print("%d %d" % (self.offset_x, self.offset_y), 0, 120, 5)
 
 class ToolsEditor(object):
     def __init__(self, state):
@@ -312,9 +352,29 @@ class Editor(object):
     def __init__(self):
         self.state = State()
 
-        self.current_window = SpriteEditor(self.state)
+        self.windows = [SpriteEditor(self.state), MapEditor(self.state)]
+        self.current_window = self.windows[0]
         self.tools = ToolsEditor(self.state)
         self.sm = SpritesMap(self.state)
+
+        self.widgets = [
+            Widget("SPRITE EDITOR", 110, 1, [
+                [6, 8, 8, 8, 8, 8, 8, 6],
+                [8, 6, 6, 6, 6, 6, 6, 8],
+                [8, 6, 8, 8, 8, 8, 6, 8],
+                [8, 6, 8, 8, 8, 8, 6, 8],
+                [8, 6, 6, 6, 6, 6, 6, 8],
+                [6, 8, 8, 8, 8, 8, 8, 6],
+            ]),
+            Widget("MAP EDITOR", 119, 1, [
+                [8, 8, 8, 8, 8, 8, 8, 8],
+                [8, 6, 6, 6, 6, 6, 6, 8],
+                [8, 6, 8, 8, 8, 8, 6, 8],
+                [8, 6, 8, 8, 8, 8, 6, 8],
+                [8, 6, 6, 6, 6, 6, 6, 8],
+                [8, 8, 8, 8, 8, 8, 8, 8],
+            ])
+        ]
 
     def draw_contour(self):
         rectfill(0, 0, 128, 8, 8)
@@ -328,6 +388,16 @@ class Editor(object):
         self.sm.update()
         self.tools.update()
         self.current_window.update()
+        if self.state.mouse_state == 1:
+            for widget in self.widgets:
+                widget.update(self.state.mouse_x, self.state.mouse_y)
+
+            for widget in self.widgets:
+                if widget.is_click():
+                    if widget.name == "MAP EDITOR":
+                        self.current_window = self.windows[1]
+                    elif widget.name == "SPRITE EDITOR":
+                        self.current_window = self.windows[0]
 
     def draw(self):
         cls()
@@ -336,6 +406,8 @@ class Editor(object):
         self.sm.draw()
         self.tools.draw()
         self.current_window.draw()
+        for widget in self.widgets:
+            widget.draw()
 
 E = Editor()
 
