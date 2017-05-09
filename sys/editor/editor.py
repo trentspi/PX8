@@ -27,12 +27,17 @@ class State(object):
     def __init__(self):
         self.mouse_x = 0
         self.mouse_y = 0
+        self.mouse_state = 0
+        self.mouse_statep = 0
 
         self.idx_sprites_batch = 88
         self.current_sprite = 0
 
         self.x_zoom_sprite = 0
         self.y_zoom_sprite = 0
+        self.zoom_sprite = 1
+        self.idx_zoom_sprite = 0
+        self.sprite_available_zooms = [1, 2, 4]
 
         self.idx_x_zoom_sprite = 10
         self.idx_y_zoom_sprite = 10
@@ -43,16 +48,23 @@ class State(object):
         self.on_current_sprite_y = 0
         self.on_current_sprite = False
 
+    def update(self):
+        self.mouse_state = mouse_state()
+        self.mouse_statep = mouse_statep()
+        self.mouse_x = mouse_x()
+        self.mouse_y = mouse_y()
+
 def point_in_rect(x, y, coord):
     return (coord[0] <= x <= coord[2] and
             coord[1] <= y <= coord[3])
 
 class Widget(object):
-    def __init__(self, name, x, y, data):
+    def __init__(self, name, x, y, data, highlight=None):
         self.name = name
         self.x1 = x
         self.y1 = y
         self.data = data
+        self.highlight = highlight
         self.clicked = False
 
         self.x2 = x
@@ -71,9 +83,18 @@ class Widget(object):
                         self.y1 <= y <= self.y2)
 
     def draw(self):
-        for y, row in enumerate(self.data):
-            for idx, pixel in enumerate(row):
-                pset(self.x1+idx, self.y1+y, pixel)
+        if self.highlight and self.clicked:
+            for y, row in enumerate(self.data):
+                for idx, pixel in enumerate(row):
+                    p = self.highlight.get(pixel)
+                    if p:
+                        pset(self.x1+idx, self.y1+y, p)
+                    else:
+                        pset(self.x1+idx, self.y1+y, pixel)
+        else:
+            for y, row in enumerate(self.data):
+                for idx, pixel in enumerate(row):
+                    pset(self.x1+idx, self.y1+y, pixel)
 
 class SpritesMap(object):
     def __init__(self, state):
@@ -87,10 +108,6 @@ class SpritesMap(object):
 
     def update(self):
         self.state.on_current_sprite = False
-        self.state.mouse_state = mouse_state()
-        self.state.mouse_x = mouse_x()
-        self.state.mouse_y = mouse_y()
-
         if self.state.mouse_state == 1:
             if point_in_rect(self.state.mouse_x, self.state.mouse_y, self.buttons):
                 for btn_idx, button in enumerate(self.buttons_map):
@@ -106,17 +123,8 @@ class SpritesMap(object):
                 self.state.x_zoom_sprite = (self.state.current_sprite % 16) * 8
                 self.state.y_zoom_sprite = math.floor(self.state.current_sprite / 16) * 8
 
-        if point_in_rect(self.state.mouse_x, self.state.mouse_y, [self.state.idx_x_zoom_sprite,
-                                                                     self.state.idx_y_zoom_sprite,
-                                                                     self.state.idx_x_zoom_sprite+8*8,
-                                                                     self.state.idx_y_zoom_sprite+8*8]):
-            idx_x = math.floor((self.state.mouse_x - self.state.idx_x_zoom_sprite) / 8)
-            idx_y = math.floor((self.state.mouse_y - self.state.idx_y_zoom_sprite) / 8)
-            self.state.on_current_sprite_x = self.state.x_zoom_sprite + idx_x
-            self.state.on_current_sprite_y = self.state.y_zoom_sprite + idx_y
-            self.state.on_current_sprite = True
-
     def draw_sprite_map(self):
+        zoom = self.state.zoom_sprite
         current_sprite_x = 0
         current_sprite_y = 0
 
@@ -134,11 +142,8 @@ class SpritesMap(object):
             y += 8
 
         current_sprite_x -= 1
-        rect(current_sprite_x, current_sprite_y, current_sprite_x+8, current_sprite_y+8, 7)
-
-        current_sprite_x -= 1
-        current_sprite_y -= 1
-        rect(current_sprite_x, current_sprite_y, current_sprite_x+10, current_sprite_y+10, 0)
+        rect(current_sprite_x, current_sprite_y, current_sprite_x+8*zoom, current_sprite_y+8*zoom, 7)
+        rect(current_sprite_x - 1, current_sprite_y - 1, current_sprite_x+1+8*zoom, current_sprite_y+1+8*zoom, 0)
 
     def draw_sprite_flags(self):
         idx = 0
@@ -164,7 +169,7 @@ class SpritesMap(object):
 
     def draw_information(self):
         if self.state.on_current_sprite:
-            px8_print("x %d y %d" % (self.state.on_current_sprite_x, self.state.on_current_sprite_y), 0, 120, 5)
+            px8_print("%d,%d" % (self.state.on_current_sprite_x, self.state.on_current_sprite_y), 0, 120, 5)
 
 class PalettePicker(object):
     def __init__(self, state):
@@ -179,17 +184,16 @@ class PalettePicker(object):
         return self.current_color
 
     def update(self):
-        _mouse_state = mouse_state()
-        if _mouse_state == 1:
-            _mouse_x = mouse_x()
-            _mouse_y = mouse_y()
+        if self.state.mouse_statep:
+            _mouse_x = self.state.mouse_x
+            _mouse_y = self.state.mouse_y
 
             if point_in_rect(self.state.mouse_x, self.state.mouse_y, [self.state.idx_x_zoom_sprite,
                                                                          self.state.idx_y_zoom_sprite,
                                                                          self.state.idx_x_zoom_sprite+8*8,
                                                                          self.state.idx_y_zoom_sprite+8*8]):
-                idx_x = math.floor((self.state.mouse_x - self.state.idx_x_zoom_sprite) / 8)
-                idx_y = math.floor((self.state.mouse_y - self.state.idx_y_zoom_sprite) / 8)
+                idx_x = math.floor((self.state.mouse_x - self.state.idx_x_zoom_sprite) / 8*self.state.zoom_sprite)
+                idx_y = math.floor((self.state.mouse_y - self.state.idx_y_zoom_sprite) / 8*self.state.zoom_sprite)
 
                 sset(self.state.x_zoom_sprite + idx_x, self.state.y_zoom_sprite + idx_y, self.get_current_color())
 
@@ -220,7 +224,6 @@ class PalettePicker(object):
         current_selection_y = (self.idx_y + 8*self.current_selection_y) - 1
         rect(current_selection_x, current_selection_y, current_selection_x+9, current_selection_y+9, 7)
 
-
 class SpriteEditor(object):
     def __init__(self, state):
         self.state = state
@@ -229,6 +232,20 @@ class SpriteEditor(object):
     def update(self):
         self.pp.update()
 
+        if btnp(4):
+            self.state.idx_zoom_sprite = (self.state.idx_zoom_sprite + 1) % len(self.state.sprite_available_zooms)
+            self.state.zoom_sprite = self.state.sprite_available_zooms[self.state.idx_zoom_sprite]
+
+        if point_in_rect(self.state.mouse_x, self.state.mouse_y, [self.state.idx_x_zoom_sprite,
+                                                                  self.state.idx_y_zoom_sprite,
+                                                                  self.state.idx_x_zoom_sprite+8*8,
+                                                                  self.state.idx_y_zoom_sprite+8*8]):
+            idx_x = math.floor((self.state.mouse_x - self.state.idx_x_zoom_sprite) / 8)
+            idx_y = math.floor((self.state.mouse_y - self.state.idx_y_zoom_sprite) / 8)
+            self.state.on_current_sprite_x = self.state.x_zoom_sprite + idx_x
+            self.state.on_current_sprite_y = self.state.y_zoom_sprite + idx_y
+            self.state.on_current_sprite = True
+
     def draw(self):
         self.pp.draw()
 
@@ -236,17 +253,27 @@ class SpriteEditor(object):
 
         sspr(self.state.x_zoom_sprite,
              self.state.y_zoom_sprite,
-             8,
-             8,
+             8*self.state.zoom_sprite,
+             8*self.state.zoom_sprite,
              self.state.idx_x_zoom_sprite,
              self.state.idx_y_zoom_sprite,
-             8*8, 8*8)
+             8*8,
+             8*8)
 
 class MapEditor(object):
     def __init__(self, state):
         self.state = state
+
+        self.coord = [0, 8, 128, 78]
         self.offset_x = 0
         self.offset_y = 0
+        self.available_zooms = [1, 1/2, 1/4]
+        self.idx_zoom = 0
+        self.zoom = self.available_zooms[self.idx_zoom]
+        self.size_sprite = 8 * self.zoom
+        self.select_field = [0, 8]
+
+        self.current_sprite = [0, 0]
 
         self._cache = [0] * (128*32)
 
@@ -255,35 +282,71 @@ class MapEditor(object):
                 self._cache[x + y * 128] = mget(x, y)
 
     def update(self):
-        if btn(0):
-            self.offset_x -= 1
-            self.offset_x = max(-5, self.offset_x)
-        if btn(1):
-            self.offset_x += 1
-            self.offset_x = min(112, self.offset_x)
-        if btn(2):
-            self.offset_y -= 1
-            self.offset_y = max(-5, self.offset_y)
-        if btn(3):
-            self.offset_y += 1
-            self.offset_y = min(24, self.offset_y)
+        if btnp(0):
+            self.offset_x -= 8
+            self.offset_x = max(0, self.offset_x)
+        if btnp(1):
+            self.offset_x += 8
+            self.offset_x = min(flr((128 - 16*self.zoom) * self.zoom), self.offset_x)
+        if btnp(2):
+            self.offset_y -= 8
+            self.offset_y = max(0, self.offset_y)
+        if btnp(3):
+            self.offset_y += 8
+            self.offset_y = min(flr((32 - 8*self.zoom) * self.zoom), self.offset_y)
 
+        if btnp(4):
+            self.idx_zoom = (self.idx_zoom + 1) % len(self.available_zooms)
+            self.zoom = self.available_zooms[self.idx_zoom]
+            self.size_sprite = 8 * self.zoom
+
+        if point_in_rect(self.state.mouse_x, self.state.mouse_y, self.coord):
+            self.select_field = [self.state.mouse_x - self.state.mouse_x % self.size_sprite,
+                                 self.state.mouse_y - self.state.mouse_y % self.size_sprite]
+
+            new_x = flr((self.select_field[0] + self.offset_x * self.size_sprite) / self.size_sprite)
+            new_y = flr((self.select_field[1] - self.coord[1] + self.offset_y * self.size_sprite) / self.size_sprite)
+            if self.state.mouse_state == 1:
+                idx = flr(new_x + new_y * 128)
+                self._cache[idx] = self.state.current_sprite
+                mset(new_x, new_y, self.state.current_sprite)
+
+            self.current_sprite[0] = new_x
+            self.current_sprite[1] = new_y
 
     def draw(self):
-        rectfill(0, 8, 128, 78, 0)
+        rectfill(self.coord[0], self.coord[1], self.coord[2], self.coord[3], 0)
+        self.draw_with_zoom()
+        self.draw_select_field()
+        px8_print("%d %d" % (self.current_sprite[0], self.current_sprite[1]), 60, 120, 5)
+
+    def draw_with_zoom(self):
+        zoom = self.zoom
 
         idx_y = 0
-        for y in range(self.offset_y, self.offset_y + 8):
+        for y in range(self.offset_y, self.offset_y + flr(8/zoom)):
             idx_x = 0
-            for x in range(self.offset_x, self.offset_x + 16):
+            for x in range(self.offset_x, self.offset_x + flr(16/zoom)):
                 offset = x + y * 128
                 sprite_number = self._cache[offset]
                 if sprite_number != 0:
-                    spr(self._cache[offset], idx_x * 8, idx_y * 8 + 9)
+                    sprite_x = (sprite_number%16) * 8
+                    sprite_y = flr(sprite_number / 16) * 8
+
+                    dx = idx_x * (8*zoom)
+                    dy = idx_y * (8*zoom) + 9
+                    sspr(sprite_x, sprite_y, 8, 8, dx, dy, flr(zoom*8), flr(zoom*8))
+
                 idx_x += 1
             idx_y += 1
 
-        px8_print("%d %d" % (self.offset_x, self.offset_y), 0, 120, 5)
+    def draw_select_field(self):
+        rect(self.select_field[0],
+             self.select_field[1],
+             self.select_field[0] + 8 * self.zoom,
+             self.select_field[1] + 8 * self.zoom,
+             7)
+
 
 class ToolsEditor(object):
     def __init__(self, state):
@@ -325,21 +388,23 @@ class ToolsEditor(object):
         for widget in self.widgets:
             if widget.is_click():
                 if widget.name == "ERASE":
-                    for x in range(0, 8):
-                        for y in range(0, 8):
+                    for x in range(0, 8*self.state.zoom_sprite):
+                        for y in range(0, 8*self.state.zoom_sprite):
                             sset(self.state.x_zoom_sprite + x, self.state.y_zoom_sprite + y, 0)
                 if widget.name == "COPY":
-                    if not self.buffer_copy:
-                        self.buffer_copy = [0] * (8*8)
+                    self.buffer_copy = [0] * (8*self.state.zoom_sprite*8**self.state.zoom_sprite)
 
-                    for x in range(0, 8):
-                        for y in range(0, 8):
-                            self.buffer_copy[x+y*8] = sget(self.state.x_zoom_sprite + x, self.state.y_zoom_sprite + y)
+                    for x in range(0, 8*self.state.zoom_sprite):
+                        for y in range(0, 8*self.state.zoom_sprite):
+                            self.buffer_copy[x+y*8*self.state.zoom_sprite] = sget(self.state.x_zoom_sprite + x,
+                                                                                  self.state.y_zoom_sprite + y)
 
                 if widget.name == "PASTE":
-                    for x in range(0, 8):
-                        for y in range(0, 8):
-                            sset(self.state.x_zoom_sprite + x, self.state.y_zoom_sprite + y, self.buffer_copy[x+y*8])
+                    for x in range(0, 8*self.state.zoom_sprite):
+                        for y in range(0, 8*self.state.zoom_sprite):
+                            sset(self.state.x_zoom_sprite + x,
+                                 self.state.y_zoom_sprite + y,
+                                 self.buffer_copy[x+y*8*self.state.zoom_sprite])
 
             widget.reset()
 
@@ -359,32 +424,33 @@ class Editor(object):
 
         self.widgets = [
             Widget("SPRITE EDITOR", 110, 1, [
-                [6, 8, 8, 8, 8, 8, 8, 6],
-                [8, 6, 6, 6, 6, 6, 6, 8],
-                [8, 6, 8, 8, 8, 8, 6, 8],
-                [8, 6, 8, 8, 8, 8, 6, 8],
-                [8, 6, 6, 6, 6, 6, 6, 8],
-                [6, 8, 8, 8, 8, 8, 8, 6],
-            ]),
+                [6, 11, 11, 11, 11, 11, 11, 6],
+                [11, 6, 6, 6, 6, 6, 6, 11],
+                [11, 6, 11, 11, 11, 11, 6, 11],
+                [11, 6, 11, 11, 11, 11, 6, 11],
+                [11, 6, 6, 6, 6, 6, 6, 11],
+                [6, 11, 11, 11, 11, 11, 11, 6],
+            ], {6: 10}),
             Widget("MAP EDITOR", 119, 1, [
-                [8, 8, 8, 8, 8, 8, 8, 8],
-                [8, 6, 6, 6, 6, 6, 6, 8],
-                [8, 6, 8, 8, 8, 8, 6, 8],
-                [8, 6, 8, 8, 8, 8, 6, 8],
-                [8, 6, 6, 6, 6, 6, 6, 8],
-                [8, 8, 8, 8, 8, 8, 8, 8],
-            ])
+                [11, 11, 11, 11, 11, 11, 11, 11],
+                [11, 6, 6, 6, 6, 6, 6, 11],
+                [11, 6, 11, 11, 11, 11, 6, 11],
+                [11, 6, 11, 11, 11, 11, 6, 11],
+                [11, 6, 6, 6, 6, 6, 6, 11],
+                [11, 11, 11, 11, 11, 11, 11, 11],
+            ], {6: 10})
         ]
 
     def draw_contour(self):
-        rectfill(0, 0, 128, 8, 8)
-        rectfill(0, 120, 128, 128, 8)
+        rectfill(0, 0, 128, 8, 11)
+        rectfill(0, 120, 128, 128, 11)
 
         rectfill(0, 75, 128, 87, 5)
         rectfill(0, 9, 8, 77, 5)
         rectfill(75, 9, 128, 76, 5)
 
     def update(self):
+        self.state.update()
         self.sm.update()
         self.tools.update()
         self.current_window.update()

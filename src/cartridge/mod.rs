@@ -20,7 +20,8 @@ use regex::Regex;
 
 use png;
 
-use gfx;
+use px8;
+
 use gfx::Sprite;
 
 fn read_string(v: &mut Vec<u8>, size: usize) -> String {
@@ -617,18 +618,18 @@ impl CartridgeMusic {
 }
 
 pub struct CartridgeMap {
-    pub map: [[u32; 32]; gfx::SCREEN_WIDTH],
+    pub map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH],
 }
 
 impl CartridgeMap {
     pub fn empty() -> CartridgeMap {
-        CartridgeMap { map: [[0; 32]; gfx::SCREEN_WIDTH] }
+        CartridgeMap { map: [[0; px8::MAP_HEIGHT]; px8::MAP_WIDTH] }
     }
 
     pub fn new(lines: &mut Vec<String>) -> CartridgeMap {
         info!("[CARTRIDGE] CartridgeMap");
 
-        let mut map: [[u32; 32]; gfx::SCREEN_WIDTH] = [[0; 32]; gfx::SCREEN_WIDTH];
+        let mut map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH] = [[0; px8::MAP_HEIGHT]; px8::MAP_WIDTH];
         let mut x;
         let mut y = 0;
 
@@ -659,7 +660,7 @@ impl CartridgeMap {
     }
 
     pub fn new_from_bytes(v: Vec<u8>) -> CartridgeMap {
-        let mut map: [[u32; 32]; gfx::SCREEN_WIDTH] = [[0; 32]; gfx::SCREEN_WIDTH];
+        let mut map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH] = [[0; px8::MAP_HEIGHT]; px8::MAP_WIDTH];
 
         let mut idx_x;
         let mut idx_y = 0;
@@ -693,6 +694,10 @@ impl CartridgeMap {
         }
 
         return data;
+    }
+
+    pub fn set_map(&mut self, map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH]) {
+        self.map = map;
     }
 }
 
