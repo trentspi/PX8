@@ -80,6 +80,27 @@ class Ellipse(object):
             ellipsefill(random_coord(), random_coord(), random_radius(), random_radius(), random_color())
 
 
+class Polygon(object):
+    def __init__(self):
+        self.T = 0
+
+    def init(self):
+        cls()
+
+    def update(self):
+        self.T += 1
+
+    def draw(self):
+        if self.T % 20 == 1:
+            cls()
+            x = []
+            y = []
+            for _ in range(0, flr(rnd(10))):
+                x.append(random_coord())
+                y.append(random_coord())
+
+            polygon(x, y, random_color())
+
 class Line(object):
     def __init__(self):
         self.T = 0
@@ -276,9 +297,13 @@ class Memcpy(object):
 class Audio(object):
     def __init__(self):
         self.T = 0
+        self.id_sound = -1
 
     def init(self):
-        sound_load("./demos/assets/sine.wav")
+        self.id_sound = sound_load("./examples/assets/cat.wav")
+        print(self.id_sound)
+        if self.id_sound != -1:
+            sound_play(self.id_sound)
 
     def update(self):
         self.T += 1
@@ -339,6 +364,7 @@ demos = [
     ["circ", [Circ()]],
     ["trigon", [Trigon()]],
     ["ellipse", [Ellipse()]],
+    ["polygon", [Polygon()]],
     ["line", [Line()]],
     ["spr", [Spr()]],
     ["sspr", [SSpr()]],

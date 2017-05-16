@@ -39,8 +39,9 @@ pub mod plugin {
 
     impl LuaPlugin {
         pub fn new() -> LuaPlugin {
-            LuaPlugin { lua_state: Arc::new(Mutex::new(lua::State::new())),
-                        loaded_code: false
+            LuaPlugin {
+                lua_state: Arc::new(Mutex::new(lua::State::new())),
+                loaded_code: false,
             }
         }
 
@@ -77,8 +78,7 @@ pub mod plugin {
             lua_state.pop(2);
 
             /* Create the PX8Lua object */
-            lua_state.do_string("s = PX8Lua.new()");
-
+            lua_state.do_string("PX8Object = PX8Lua.new()");
             lua_state.do_string(r#"debug_print = print"#);
 
             lua_state.do_string(r#"camera = function(x, y)
@@ -86,7 +86,7 @@ pub mod plugin {
               x = math.floor(x)
               y = math.floor(y)
 
-              s:camera(x, y)
+              PX8Object:camera(x, y)
               end
               "#);
 
@@ -98,7 +98,7 @@ pub mod plugin {
                 p = 0
               end
 
-              return s:btn(p, x) == 1
+              return PX8Object:btn(p, x) == 1
               end
               "#);
             lua_state.do_string(r#"btnp = function(x, p)
@@ -109,7 +109,7 @@ pub mod plugin {
                 p = 0
               end
 
-              return s:btnp(p, x) == 1
+              return PX8Object:btnp(p, x) == 1
               end
               "#);
 
@@ -127,7 +127,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:rect(x0, y0, x1, y1, color)
+              PX8Object:rect(x0, y0, x1, y1, color)
               end
               "#);
             lua_state.do_string(r#"rectfill = function(x0, y0, x1, y1, color)
@@ -143,7 +143,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:rectfill(x0, y0, x1, y1, color)
+              PX8Object:rectfill(x0, y0, x1, y1, color)
               end
               "#);
             lua_state.do_string(r#"circ = function(x, y, r, color)
@@ -157,7 +157,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:circ(x, y, r, color)
+              PX8Object:circ(x, y, r, color)
               end
               "#);
             lua_state.do_string(r#"circfill = function(x, y, r, color)
@@ -171,7 +171,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:circfill(x, y, r, color)
+              PX8Object:circfill(x, y, r, color)
               end
               "#);
             lua_state.do_string(r#"clip = function(x, y, w, h)
@@ -193,7 +193,7 @@ pub mod plugin {
               w = math.floor(w)
               h = math.floor(h)
 
-              s:clip(x, y, w, h)
+              PX8Object:clip(x, y, w, h)
               end
               "#);
             lua_state.do_string(r#"ellipse = function(x, y, rx, ry, color)
@@ -208,7 +208,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:ellipse(x, y, rx, ry, color)
+              PX8Object:ellipse(x, y, rx, ry, color)
               end
               "#);
             lua_state.do_string(r#"ellipsefill = function(x, y, rx, ry, color)
@@ -223,7 +223,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:ellipsefill(x, y, rx, ry, color)
+              PX8Object:ellipsefill(x, y, rx, ry, color)
               end
               "#);
             lua_state.do_string(r#"fget = function(idx, flag)
@@ -231,10 +231,10 @@ pub mod plugin {
               flag = math.floor(flag)
 
               if flag == nil then
-                return s:fget_all(idx)
+                return PX8Object:fget_all(idx)
               end
 
-              return s:fget(idx, flag)
+              return PX8Object:fget(idx, flag)
 
               end
               "#);
@@ -243,12 +243,12 @@ pub mod plugin {
               flag = math.floor(flag)
 
               if value == nil then
-                s:fset_all(idx, flag)
+                PX8Object:fset_all(idx, flag)
               else
                 if value == true then
-                    s:fset(idx, flag, 1)
+                    PX8Object:fset(idx, flag, 1)
                 else
-                    s:fset(idx, flag, 0)
+                    PX8Object:fset(idx, flag, 0)
                 end
               end
 
@@ -267,7 +267,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:line(x0, y0, x1, y1, color)
+              PX8Object:line(x0, y0, x1, y1, color)
               end
               "#);
             lua_state.do_string(r#"trigon = function(x1, y1, x2, y2, x3, y3, color)
@@ -284,13 +284,13 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:trigon(x1, y1, x2, y2, x3, y3, color)
+              PX8Object:trigon(x1, y1, x2, y2, x3, y3, color)
               end
               "#);
 
             lua_state.do_string(r#"rnd = function(x)
               x = math.floor(x)
-              return s:rnd(x)
+              return PX8Object:rnd(x)
               end
               "#);
 
@@ -300,7 +300,7 @@ pub mod plugin {
               "#);
 
             lua_state.do_string(r#"cls = function()
-              s:cls()
+              PX8Object:cls()
               end
               "#);
 
@@ -313,7 +313,7 @@ pub mod plugin {
                 t = 0
               end
 
-              s:palt(c, t)
+              PX8Object:palt(c, t)
               end
               "#);
 
@@ -330,7 +330,7 @@ pub mod plugin {
                 p = -1
               end
 
-              s:pal(c0, c1, p)
+              PX8Object:pal(c0, c1, p)
               end
               "#);
 
@@ -344,7 +344,7 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:pset(x, y, color)
+              PX8Object:pset(x, y, color)
 
               end
               "#);
@@ -353,7 +353,7 @@ pub mod plugin {
               x = math.floor(x)
               y = math.floor(y)
 
-              return s:pget(x, y)
+              return PX8Object:pget(x, y)
               end
               "#);
 
@@ -361,7 +361,7 @@ pub mod plugin {
               x = math.floor(x)
               y = math.floor(y)
 
-              return s:sget(x, y)
+              return PX8Object:sget(x, y)
               end
               "#);
 
@@ -376,17 +376,17 @@ pub mod plugin {
 
               color = math.floor(color)
 
-              s:sset(x, y, c)
+              PX8Object:sset(x, y, c)
               end
               "#);
 
             lua_state.do_string(r#"noise = function(x, y, z)
-              return s:noise(x, y, z)
+              return PX8Object:noise(x, y, z)
               end
               "#);
 
             lua_state.do_string(r#"noise_set_seed = function(seed)
-              return s:noise_set_seed(seed)
+              return PX8Object:noise_set_seed(seed)
               end
               "#);
 
@@ -404,7 +404,7 @@ pub mod plugin {
                 layer = 0
               end
 
-              s:map(cel_x, cel_y, sx, sy, cel_w, cel_h, layer)
+              PX8Object:map(cel_x, cel_y, sx, sy, cel_w, cel_h, layer)
               end
               "#);
 
@@ -417,7 +417,7 @@ pub mod plugin {
               x = math.floor(x)
               y = math.floor(y)
 
-              return s:mget(x, y)
+              return PX8Object:mget(x, y)
               end
               "#);
 
@@ -426,7 +426,7 @@ pub mod plugin {
               y = math.floor(y)
               v = math.floor(v)
 
-              s:mset(x, y, v)
+              PX8Object:mset(x, y, v)
               end
               "#);
 
@@ -460,7 +460,7 @@ pub mod plugin {
                 flip_y = 0
               end
 
-              s:spr(n, x, y, w, h, flip_x, flip_y)
+              PX8Object:spr(n, x, y, w, h, flip_x, flip_y)
               end
               "#);
 
@@ -497,11 +497,11 @@ pub mod plugin {
                 flip_y = 0
               end
 
-              s:sspr(sx, sy, sw, sh, dx, dy, dw, dh, flip_x, flip_y)
+              PX8Object:sspr(sx, sy, sw, sh, dx, dy, dw, dh, flip_x, flip_y)
               end
               "#);
 
-           lua_state.do_string(r#"print = function(str, x, y, col)
+            lua_state.do_string(r#"print = function(str, x, y, col)
 
               if x == nil then
                 x = -1
@@ -519,13 +519,13 @@ pub mod plugin {
               y = math.floor(y)
               col = math.floor(col)
 
-              s:print(str, x, y, col)
+              PX8Object:print(str, x, y, col)
 
               end
               "#);
 
             lua_state.do_string(r#"time = function()
-                v  = s:time()
+                v  = PX8Object:time()
                 return v
               end
               "#);
@@ -544,7 +544,7 @@ pub mod plugin {
 
             lua_state.do_string(r#"color = function(c)
                 c = math.floor(c)
-                s:color(c)
+                PX8Object:color(c)
               end
               "#);
 
@@ -558,7 +558,7 @@ pub mod plugin {
               "#);
 
             lua_state.do_string(r#"stat = function(x)
-                v = s:stat(x)
+                v = PX8Object:stat(x)
                 return v
               end
               "#);
@@ -567,13 +567,13 @@ pub mod plugin {
             /* CARTDATA */
             lua_state.do_string(r#"cartdata = function(x)
               x = math.floor(x)
-              s:cartdata(x)
+              PX8Object:cartdata(x)
               end
               "#);
 
             lua_state.do_string(r#"dget = function(x)
               x = math.floor(x)
-              return s:dget(x)
+              return PX8Object:dget(x)
               end
               "#);
 
@@ -581,7 +581,7 @@ pub mod plugin {
               x = math.floor(x)
               y = math.floor(y)
 
-              s:dset(x, y)
+              PX8Object:dset(x, y)
               end
               "#);
 
@@ -724,7 +724,7 @@ pub mod plugin {
         }
 
         pub fn init(&mut self) {
-            if ! self.loaded_code {
+            if !self.loaded_code {
                 return;
             }
 
@@ -739,7 +739,7 @@ pub mod plugin {
         }
 
         pub fn draw(&mut self) -> bool {
-            if ! self.loaded_code {
+            if !self.loaded_code {
                 return false;
             }
 
@@ -754,7 +754,7 @@ pub mod plugin {
         }
 
         pub fn update(&mut self) -> bool {
-            if ! self.loaded_code {
+            if !self.loaded_code {
                 return false;
             }
 
@@ -788,12 +788,11 @@ pub mod plugin {
         }
     }
 
-    struct PX8Lua {
-    }
+    struct PX8Lua {}
 
     impl PX8Lua {
         fn new() -> PX8Lua {
-            return PX8Lua{};
+            return PX8Lua {};
         }
 
         #[allow(non_snake_case)]
@@ -817,9 +816,13 @@ pub mod plugin {
             let y = state.check_integer(3);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().camera(x as i32, y as i32);
 
@@ -834,9 +837,13 @@ pub mod plugin {
             let value = state.check_integer(2);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().color(value as i32);
 
@@ -850,9 +857,13 @@ pub mod plugin {
             let mut state2 = State::from_ptr(lua_context);
 
             let players = state2.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.players.clone()
-            });
+                                                let data = extra
+                                                    .as_ref()
+                                                    .unwrap()
+                                                    .downcast_ref::<ExtraData>()
+                                                    .unwrap();
+                                                data.players.clone()
+                                            });
 
             let player = state.check_integer(2);
 
@@ -875,9 +886,13 @@ pub mod plugin {
             let mut state2 = State::from_ptr(lua_context);
 
             let players = state2.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.players.clone()
-            });
+                                                let data = extra
+                                                    .as_ref()
+                                                    .unwrap()
+                                                    .downcast_ref::<ExtraData>()
+                                                    .unwrap();
+                                                data.players.clone()
+                                            });
 
             let player = state.check_integer(2);
             let i = state.check_integer(3);
@@ -895,9 +910,13 @@ pub mod plugin {
             let mut state = State::from_ptr(lua_context);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().cls();
 
@@ -917,11 +936,18 @@ pub mod plugin {
             let col = state.check_integer(6);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().rect(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
+            screen
+                .lock()
+                .unwrap()
+                .rect(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
 
             1
         }
@@ -938,13 +964,25 @@ pub mod plugin {
             let y1 = state.check_integer(5);
             let col = state.check_integer(6);
 
-            debug!("LUA RECTFILL x0:{:?} y0:{:?} x1:{:?} y1:{:?} col:{:?}", x0, y0, x1, y1, col);
+            debug!("LUA RECTFILL x0:{:?} y0:{:?} x1:{:?} y1:{:?} col:{:?}",
+                   x0,
+                   y0,
+                   x1,
+                   y1,
+                   col);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
-            screen.lock().unwrap().rectfill(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
+            screen
+                .lock()
+                .unwrap()
+                .rectfill(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
 
             1
         }
@@ -961,11 +999,18 @@ pub mod plugin {
             let col = state.check_integer(5);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().circ(x as i32, y as i32, r as i32, col as i32);
+            screen
+                .lock()
+                .unwrap()
+                .circ(x as i32, y as i32, r as i32, col as i32);
 
             1
         }
@@ -984,11 +1029,18 @@ pub mod plugin {
             debug!("LUA CIRCFILL {:?} {:?} {:?} {:?}", x, y, r, col);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().circfill(x as i32, y as i32, r as i32, col as i32);
+            screen
+                .lock()
+                .unwrap()
+                .circfill(x as i32, y as i32, r as i32, col as i32);
 
             1
         }
@@ -1007,11 +1059,18 @@ pub mod plugin {
             debug!("LUA CLIP {:?} {:?} {:?} {:?}", x, y, w, h);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().clip(x as i32, y as i32, w as i32, h as i32);
+            screen
+                .lock()
+                .unwrap()
+                .clip(x as i32, y as i32, w as i32, h as i32);
 
             1
         }
@@ -1028,13 +1087,25 @@ pub mod plugin {
             let ry = state.check_integer(5);
             let col = state.check_integer(6);
 
-            debug!("LUA ELLIPSE x:{:?} y:{:?} rx:{:?} ry:{:?} col:{:?}", x, y, rx, ry, col);
+            debug!("LUA ELLIPSE x:{:?} y:{:?} rx:{:?} ry:{:?} col:{:?}",
+                   x,
+                   y,
+                   rx,
+                   ry,
+                   col);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
-            screen.lock().unwrap().ellipse(x as i32, y as i32, rx as i32, ry as i32, col as i32);
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
+            screen
+                .lock()
+                .unwrap()
+                .ellipse(x as i32, y as i32, rx as i32, ry as i32, col as i32);
 
             1
         }
@@ -1051,13 +1122,25 @@ pub mod plugin {
             let ry = state.check_integer(5);
             let col = state.check_integer(6);
 
-            debug!("LUA ELLIPSEFILL x:{:?} y:{:?} rx:{:?} ry:{:?} col:{:?}", x, y, rx, ry, col);
+            debug!("LUA ELLIPSEFILL x:{:?} y:{:?} rx:{:?} ry:{:?} col:{:?}",
+                   x,
+                   y,
+                   rx,
+                   ry,
+                   col);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
-            screen.lock().unwrap().ellipsefill(x as i32, y as i32, rx as i32, ry as i32, col as i32);
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
+            screen
+                .lock()
+                .unwrap()
+                .ellipsefill(x as i32, y as i32, rx as i32, ry as i32, col as i32);
 
             1
         }
@@ -1077,13 +1160,33 @@ pub mod plugin {
             let y3 = state.check_integer(7);
             let col = state.check_integer(8);
 
-            debug!("LUA TRIGON x1:{:?} y1:{:?} x2:{:?} y2:{:?} x3:{:?} y3:{:?} col:{:?}", x1, y1, x2, y2, x3, y3, col);
+            debug!("LUA TRIGON x1:{:?} y1:{:?} x2:{:?} y2:{:?} x3:{:?} y3:{:?} col:{:?}",
+                   x1,
+                   y1,
+                   x2,
+                   y2,
+                   x3,
+                   y3,
+                   col);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
-            screen.lock().unwrap().trigon(x1 as i32, y1 as i32, x2 as i32, y2 as i32, x3 as i32, y3 as i32, col as i32);
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
+            screen
+                .lock()
+                .unwrap()
+                .trigon(x1 as i32,
+                        y1 as i32,
+                        x2 as i32,
+                        y2 as i32,
+                        x3 as i32,
+                        y3 as i32,
+                        col as i32);
 
             1
         }
@@ -1100,9 +1203,13 @@ pub mod plugin {
             debug!("LUA PALT {:?} {:?}", c, t);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().palt(c as i32, t == 1);
 
@@ -1117,12 +1224,16 @@ pub mod plugin {
 
             let c0 = state.check_integer(2);
             let c1 = state.check_integer(3);
-//            let p = state.check_integer(4);
+            //            let p = state.check_integer(4);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().pal(c0 as i32, c1 as i32);
 
@@ -1147,9 +1258,13 @@ pub mod plugin {
             }
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().pset(x as i32, y as i32, col as i32);
 
@@ -1173,9 +1288,13 @@ pub mod plugin {
             }
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             let value = screen.lock().unwrap().pget(x as u32, y as u32);
 
@@ -1204,9 +1323,13 @@ pub mod plugin {
             }
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             let value = screen.lock().unwrap().sget(x as u32, y as u32);
 
@@ -1235,9 +1358,13 @@ pub mod plugin {
             }
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().sset(x as u32, y as u32, col as i32);
 
@@ -1256,9 +1383,13 @@ pub mod plugin {
             debug!("LUA NOISE {:?} {:?} {:?}", x, y, z);
 
             let noise = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.noise.clone()
-            });
+                                             let data = extra
+                                                 .as_ref()
+                                                 .unwrap()
+                                                 .downcast_ref::<ExtraData>()
+                                                 .unwrap();
+                                             data.noise.clone()
+                                         });
 
             let value = noise.lock().unwrap().get(x, y, z);
             state.push_number(value);
@@ -1276,9 +1407,13 @@ pub mod plugin {
             debug!("LUA NOISE SET SEED {:?}", seed);
 
             let noise = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.noise.clone()
-            });
+                                             let data = extra
+                                                 .as_ref()
+                                                 .unwrap()
+                                                 .downcast_ref::<ExtraData>()
+                                                 .unwrap();
+                                             data.noise.clone()
+                                         });
 
             noise.lock().unwrap().set_seed(seed as u32);
 
@@ -1297,11 +1432,18 @@ pub mod plugin {
             let col = state.check_integer(6);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
+            screen
+                .lock()
+                .unwrap()
+                .line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, col as i32);
 
             1
         }
@@ -1315,9 +1457,13 @@ pub mod plugin {
             let flag = state.check_integer(3);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             state.push_bool(screen.lock().unwrap().fget(idx as u32, flag as u8));
 
@@ -1332,9 +1478,13 @@ pub mod plugin {
             let idx = state.check_integer(2);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             state.push_integer(screen.lock().unwrap().fget_all(idx as u32) as i64);
 
@@ -1351,11 +1501,18 @@ pub mod plugin {
             let value = state.check_integer(4);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().fset(idx as u32, flag as u8, value == 1);
+            screen
+                .lock()
+                .unwrap()
+                .fset(idx as u32, flag as u8, value == 1);
 
             1
         }
@@ -1369,9 +1526,13 @@ pub mod plugin {
             let flags = state.check_integer(3);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().fset_all(idx as u32, flags as u8);
 
@@ -1412,14 +1573,34 @@ pub mod plugin {
             let flip_x = state.check_integer(7);
             let flip_y = state.check_integer(8);
 
-            debug!("LUA SPR n:{:?} x:{:?} y:{:?} w:{:?} h:{:?} flip_x:{:?} flip_y:{:?}", n, x, y, w, h, flip_x, flip_y);
+            debug!("LUA SPR n:{:?} x:{:?} y:{:?} w:{:?} h:{:?} flip_x:{:?} flip_y:{:?}",
+                   n,
+                   x,
+                   y,
+                   w,
+                   h,
+                   flip_x,
+                   flip_y);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().spr(n as u32, x as i32, y as i32, w as u32, h as u32, flip_x == 1, flip_y == 1);
+            screen
+                .lock()
+                .unwrap()
+                .spr(n as u32,
+                     x as i32,
+                     y as i32,
+                     w as u32,
+                     h as u32,
+                     flip_x == 1,
+                     flip_y == 1);
 
             1
         }
@@ -1441,23 +1622,40 @@ pub mod plugin {
             let flip_x = state.check_integer(10);
             let flip_y = state.check_integer(11);
 
-            debug!("LUA SSPR sx:{:?} sy:{:?} sw:{:?} sh:{:?} dx:{:?} dy:{:?} dw:{:?} dh:{:?} flip_x:{:?} flip_y:{:?}", sx, sy, sw, sh, dx ,dy, dw, dh, flip_x, flip_y);
+            debug!("LUA SSPR sx:{:?} sy:{:?} sw:{:?} sh:{:?} dx:{:?} dy:{:?} dw:{:?} dh:{:?} flip_x:{:?} flip_y:{:?}",
+                   sx,
+                   sy,
+                   sw,
+                   sh,
+                   dx,
+                   dy,
+                   dw,
+                   dh,
+                   flip_x,
+                   flip_y);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().sspr(sx as u32,
-                                        sy as u32,
-                                        sw as u32,
-                                        sh as u32,
-                                        dx as i32,
-                                        dy as i32,
-                                        dw as u32,
-                                        dh as u32,
-                                        flip_x == 1,
-                                        flip_y == 1);
+            screen
+                .lock()
+                .unwrap()
+                .sspr(sx as u32,
+                      sy as u32,
+                      sw as u32,
+                      sh as u32,
+                      dx as i32,
+                      dy as i32,
+                      dw as u32,
+                      dh as u32,
+                      flip_x == 1,
+                      flip_y == 1);
 
             1
         }
@@ -1477,14 +1675,24 @@ pub mod plugin {
             let layer = state.check_integer(8);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().map(cel_x as u32, cel_y as u32,
-                                       sx as i32, sy as i32,
-                                       cel_w as u32, cel_h as u32,
-                                       layer as u8);
+            screen
+                .lock()
+                .unwrap()
+                .map(cel_x as u32,
+                     cel_y as u32,
+                     sx as i32,
+                     sy as i32,
+                     cel_w as u32,
+                     cel_h as u32,
+                     layer as u8);
 
 
             1
@@ -1499,9 +1707,13 @@ pub mod plugin {
             let y = state.check_integer(3);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             let value = screen.lock().unwrap().mget(x as i32, y as i32);
 
@@ -1521,9 +1733,13 @@ pub mod plugin {
             let v = state.check_integer(4);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
             screen.lock().unwrap().mset(x as i32, y as i32, v as u32);
 
@@ -1542,11 +1758,18 @@ pub mod plugin {
             let col = state.check_integer(5);
 
             let screen = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.screen.clone()
-            });
+                                              let data = extra
+                                                  .as_ref()
+                                                  .unwrap()
+                                                  .downcast_ref::<ExtraData>()
+                                                  .unwrap();
+                                              data.screen.clone()
+                                          });
 
-            screen.lock().unwrap().print(str_data.to_string(), x as i32, y as i32, col as i32);
+            screen
+                .lock()
+                .unwrap()
+                .print(str_data.to_string(), x as i32, y as i32, col as i32);
 
             1
         }
@@ -1557,9 +1780,13 @@ pub mod plugin {
             let mut state = State::from_ptr(lua_context);
 
             let info = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.info.clone()
-            });
+                                            let data = extra
+                                                .as_ref()
+                                                .unwrap()
+                                                .downcast_ref::<ExtraData>()
+                                                .unwrap();
+                                            data.info.clone()
+                                        });
 
             info!("LUA TIME {:?}", info.lock().unwrap().real_time);
 
@@ -1576,9 +1803,13 @@ pub mod plugin {
             let value = state.check_integer(2);
 
             let players = state.with_extra(|extra| {
-                let data = extra.as_ref().unwrap().downcast_ref::<ExtraData>().unwrap();
-                data.players.clone()
-            });
+                                               let data = extra
+                                                   .as_ref()
+                                                   .unwrap()
+                                                   .downcast_ref::<ExtraData>()
+                                                   .unwrap();
+                                               data.players.clone()
+                                           });
 
             let players_data = players.lock().unwrap();
 
@@ -1630,70 +1861,66 @@ pub mod plugin {
 
             1
         }
-
     }
 
-    pub const PX8LUA_LIB: [(&'static str, Function); 39] = [
-        ("new", Some(PX8Lua::lua_new)),
+    pub const PX8LUA_LIB: [(&'static str, Function); 39] =
+        [("new", Some(PX8Lua::lua_new)),
 
-        ("camera", Some(PX8Lua::lua_camera)),
-        ("color", Some(PX8Lua::lua_color)),
+         ("camera", Some(PX8Lua::lua_camera)),
+         ("color", Some(PX8Lua::lua_color)),
 
+         ("btn", Some(PX8Lua::lua_btn)),
+         ("btnp", Some(PX8Lua::lua_btnp)),
 
-        ("btn", Some(PX8Lua::lua_btn)),
-        ("btnp", Some(PX8Lua::lua_btnp)),
+         ("cls", Some(PX8Lua::lua_cls)),
 
-        ("cls", Some(PX8Lua::lua_cls)),
+         ("fget", Some(PX8Lua::lua_fget)),
+         ("fget_all", Some(PX8Lua::lua_fget_all)),
+         ("fset", Some(PX8Lua::lua_fset)),
+         ("fset_all", Some(PX8Lua::lua_fset_all)),
 
-        ("fget", Some(PX8Lua::lua_fget)),
-        ("fget_all", Some(PX8Lua::lua_fget_all)),
-        ("fset", Some(PX8Lua::lua_fset)),
-        ("fset_all", Some(PX8Lua::lua_fset_all)),
+         ("line", Some(PX8Lua::lua_line)),
 
-        ("line", Some(PX8Lua::lua_line)),
+         ("rect", Some(PX8Lua::lua_rect)),
+         ("rectfill", Some(PX8Lua::lua_rectfill)),
+         ("circ", Some(PX8Lua::lua_circ)),
+         ("circfill", Some(PX8Lua::lua_circfill)),
+         ("ellipse", Some(PX8Lua::lua_ellipse)),
+         ("ellipsefill", Some(PX8Lua::lua_ellipsefill)),
+         ("trigon", Some(PX8Lua::lua_trigon)),
 
-        ("rect", Some(PX8Lua::lua_rect)),
-        ("rectfill", Some(PX8Lua::lua_rectfill)),
-        ("circ", Some(PX8Lua::lua_circ)),
-        ("circfill", Some(PX8Lua::lua_circfill)),
-        ("ellipse", Some(PX8Lua::lua_ellipse)),
-        ("ellipsefill", Some(PX8Lua::lua_ellipsefill)),
-        ("trigon", Some(PX8Lua::lua_trigon)),
+         ("clip", Some(PX8Lua::lua_clip)),
 
-        ("clip", Some(PX8Lua::lua_clip)),
+         ("spr", Some(PX8Lua::lua_spr)),
+         ("sspr", Some(PX8Lua::lua_sspr)),
 
-        ("spr", Some(PX8Lua::lua_spr)),
-        ("sspr", Some(PX8Lua::lua_sspr)),
+         ("map", Some(PX8Lua::lua_map)),
+         ("mget", Some(PX8Lua::lua_mget)),
+         ("mset", Some(PX8Lua::lua_mset)),
 
-        ("map", Some(PX8Lua::lua_map)),
-        ("mget", Some(PX8Lua::lua_mget)),
-        ("mset", Some(PX8Lua::lua_mset)),
+         ("palt", Some(PX8Lua::lua_palt)),
+         ("pal", Some(PX8Lua::lua_pal)),
 
-        ("palt", Some(PX8Lua::lua_palt)),
-        ("pal", Some(PX8Lua::lua_pal)),
+         ("pget", Some(PX8Lua::lua_pget)),
+         ("pset", Some(PX8Lua::lua_pset)),
 
-        ("pget", Some(PX8Lua::lua_pget)),
-        ("pset", Some(PX8Lua::lua_pset)),
+         ("sget", Some(PX8Lua::lua_sget)),
+         ("sset", Some(PX8Lua::lua_sset)),
 
-        ("sget", Some(PX8Lua::lua_sget)),
-        ("sset", Some(PX8Lua::lua_sset)),
+         ("noise", Some(PX8Lua::lua_noise)),
+         ("noise_set_seed", Some(PX8Lua::lua_noise_set_seed)),
 
-        ("noise", Some(PX8Lua::lua_noise)),
-        ("noise_set_seed", Some(PX8Lua::lua_noise_set_seed)),
+         ("rnd", Some(PX8Lua::lua_rnd)),
 
-        ("rnd", Some(PX8Lua::lua_rnd)),
+         ("print", Some(PX8Lua::lua_print)),
 
-        ("print", Some(PX8Lua::lua_print)),
+         ("time", Some(PX8Lua::lua_time)),
 
-        ("time", Some(PX8Lua::lua_time)),
+         ("stat", Some(PX8Lua::lua_stat)),
 
-        ("stat", Some(PX8Lua::lua_stat)),
-
-        ("cartdata", Some(PX8Lua::lua_cartdata)),
-        ("dget", Some(PX8Lua::lua_dget)),
-        ("dset", Some(PX8Lua::lua_dset)),
-
-    ];
+         ("cartdata", Some(PX8Lua::lua_cartdata)),
+         ("dget", Some(PX8Lua::lua_dget)),
+         ("dset", Some(PX8Lua::lua_dset))];
 }
 
 #[cfg(not(feature = "lua"))]
@@ -1707,12 +1934,10 @@ pub mod plugin {
     use px8::noise::Noise;
     use px8::info::Info;
 
-    use gfx::{SCREEN_WIDTH, SCREEN_HEIGHT};
     use gfx::Screen;
 
 
-    pub struct LuaPlugin {
-    }
+    pub struct LuaPlugin {}
 
     impl LuaPlugin {
         pub fn new() -> LuaPlugin {
@@ -1727,9 +1952,15 @@ pub mod plugin {
                     noise: Arc<Mutex<Noise>>) {
             panic!("LUA plugin disabled");
         }
-        pub fn load_code(&mut self, data: String) -> bool { false }
+        pub fn load_code(&mut self, data: String) -> bool {
+            false
+        }
         pub fn init(&mut self) {}
-        pub fn draw(&mut self) -> bool { false }
-        pub fn update(&mut self) -> bool { false }
+        pub fn draw(&mut self) -> bool {
+            false
+        }
+        pub fn update(&mut self) -> bool {
+            false
+        }
     }
 }

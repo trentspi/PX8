@@ -24,6 +24,7 @@ extern crate rand;
 extern crate time;
 extern crate chrono;
 extern crate libc;
+extern crate num;
 
 extern crate rusttype;
 
@@ -71,9 +72,13 @@ fn print_usage(program: &str, opts: Options) {
 fn main() {
     let logger_config = fern::DispatchConfig {
         format: Box::new(|msg: &str, level: &log::LogLevel, _location: &log::LogLocation| {
-            format!("[{}][{}] {}", time::now().strftime("%Y-%m-%d][%H:%M:%S").unwrap(), level, msg)
-        }),
-        output: vec![fern::OutputConfig::stdout(), fern::OutputConfig::file("output.log")],
+                             format!("[{}][{}] {}",
+                                     time::now().strftime("%Y-%m-%d][%H:%M:%S").unwrap(),
+                                     level,
+                                     msg)
+                         }),
+        output: vec![fern::OutputConfig::stdout(),
+                     fern::OutputConfig::file("output.log")],
         level: log::LogLevelFilter::Trace,
     };
 
@@ -86,7 +91,10 @@ fn main() {
     opts.optflag("o", "opengl", "enable opengl with SDL");
     opts.optflag("f", "fullscreen", "display in fullscreen");
     opts.optflagopt("d", "dump", "dump the cartridge", "FILE");
-    opts.optflagopt("t", "transform", "transform the PNG/PX8 cartridge in P8", "FILE");
+    opts.optflagopt("t",
+                    "transform",
+                    "transform the PNG/PX8 cartridge in P8",
+                    "FILE");
     opts.optflagopt("s", "scale", "scale the display", "VALUE");
     opts.optflagopt("b", "bind", "bind a server on a specific address", "ADDR");
     opts.optflagopt("m", "mode", "Switch the compatibility mode", "MODE");
@@ -94,8 +102,8 @@ fn main() {
     opts.optflag("h", "help", "print this help menu");
 
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
+        Ok(m) => m,
+        Err(f) => panic!(f.to_string()),
     };
     if matches.opt_present("h") {
         print_usage(&program, opts);
@@ -119,6 +127,16 @@ fn main() {
         }
     }
 
+
+    let mut mode = px8::PX8Mode::PX8;
+
+    if matches.opt_present("m") {
+        let mode_str = matches.opt_str("m").unwrap();
+        if mode_str == "pico8" {
+            mode = px8::PX8Mode::PICO8;
+        }
+    }
+
     if matches.opt_present("c") {
         if input.contains(".png") {
             match Cartridge::from_png_file(input) {
@@ -128,7 +146,7 @@ fn main() {
                     if matches.opt_present("d") {
                         c.dump(matches.opt_str("d").unwrap());
                     }
-                },
+                }
                 Err(e) => panic!(e),
             }
         } else if input.contains(".p8") {
@@ -137,28 +155,28 @@ fn main() {
                     println!("{:?}", c);
 
                     if matches.opt_present("d") {
+                        c.set_mode(mode == px8::PX8Mode::PICO8);
                         c.dump(matches.opt_str("d").unwrap());
                     }
-                },
+                }
                 Err(e) => panic!(e),
             }
         } else if input.contains(".px8") {
             match Cartridge::from_px8_file(input) {
                 Ok(c) => {
                     println!("{:?}", c);
-                },
+                }
                 Err(e) => panic!(e),
             }
         }
-    }
-    else if matches.opt_present("t") {
+    } else if matches.opt_present("t") {
         if input.contains(".png") {
             match Cartridge::from_png_file(input) {
                 Ok(mut c) => {
                     println!("{:?}", c);
 
                     c.save_in_p8(matches.opt_str("t").unwrap());
-                },
+                }
                 Err(e) => panic!(e),
             }
         }
@@ -175,7 +193,7 @@ fn main() {
                 6 => scale = Scale::Scale6x,
                 8 => scale = Scale::Scale8x,
                 10 => scale = Scale::Scale10x,
-                _ => scale = Scale::Scale1x
+                _ => scale = Scale::Scale1x,
             }
         }
 
@@ -189,23 +207,24 @@ fn main() {
             opengl = true;
         }
 
-        let mut mode = px8::PX8Mode::PX8;
-
-        if matches.opt_present("m") {
-            let mode_str = matches.opt_str("m").unwrap();
-            if mode_str == "pico8" {
-                mode = px8::PX8Mode::PICO8;
-            }
-        }
-
-        start_px8(scale, fullscreen, opengl, input, matches.opt_present("e"), mode);
+        start_px8(scale,
+                  fullscreen,
+                  opengl,
+                  input,
+                  matches.opt_present("e"),
+                  mode);
     }
 }
 
-pub fn start_px8(scale: gfx::Scale, fullscreen: bool, opengl: bool, filename: String, editor: bool, mode: px8::PX8Mode) {
+pub fn start_px8(scale: gfx::Scale,
+                 fullscreen: bool,
+                 opengl: bool,
+                 filename: String,
+                 editor: bool,
+                 mode: px8::PX8Mode) {
     let mut frontend = match frontend::Frontend::init(scale, fullscreen, opengl) {
         Err(error) => panic!("{:?}", error),
-        Ok(frontend) => frontend
+        Ok(frontend) => frontend,
     };
 
     frontend.start("./sys/config/gamecontrollerdb.txt".to_string());

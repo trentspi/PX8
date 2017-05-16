@@ -5,13 +5,13 @@ from sys import float_info
 
 # Audio
 def sound_load(filename):
-    px8_audio.sound_load(filename)
+    return px8_audio.sound_load(filename)
 
-def sound_play(filename):
-    px8_audio.sound_play(filename)
+def sound_play(id_sound):
+    px8_audio.sound_play(id_sound)
 
-def sound_stop(filename):
-    px8_audio.sound_stop(filename)
+def sound_stop(id_sound):
+    px8_audio.sound_stop(id_sound)
 
 globals()["sound_load"] = sound_load
 globals()["sound_play"] = sound_play
@@ -107,6 +107,9 @@ def sspr(sx, sy, sw, sh, dx, dy, dw=-1, dh=-1, flip_x=False, flip_y=False):
 def trigon(x1, y1, x2, y2, x3, y3, color):
     px8_graphic.trigon(math.floor(x1), math.floor(y1), math.floor(x2), math.floor(y2), math.floor(x3), math.floor(y3), color)
 
+def polygon(x, y, color):
+    px8_graphic.polygon(x, y, color)
+
 globals()["camera"] = camera
 globals()["circ"] = circ
 globals()["circfill"] = circfill
@@ -132,6 +135,7 @@ globals()["spr_dyn_load"] = spr_dyn_load
 globals()["sset"] = sset
 globals()["sspr"] = sspr
 globals()["trigon"] = trigon
+globals()["polygon"] = polygon
 
 # Input
 
