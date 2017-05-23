@@ -140,10 +140,14 @@ globals()["polygon"] = polygon
 # Input
 
 def btn(x, p=0):
-    return px8_input.btn(x, p)
+    if type(x) == int:
+        return px8_input.btn(x, p)
+    return px8_input.btn2(ord(x))
 
 def btnp(x, p=0):
-    return px8_input.btnp(x, p)
+    if type(x) == int:
+        return px8_input.btnp(x, p)
+    return px8_input.btnp2(ord(x))
 
 def mouse_x():
     return px8_input.btn_mouse(0)
@@ -257,7 +261,7 @@ def px8_time():
 globals()["px8_time"] = px8_time
 
 
-# Useful functions
+########################### External functions ###########################
 def img_to_rgb(data):
     from PIL import Image
 

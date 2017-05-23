@@ -1,111 +1,112 @@
 use std::fmt;
-use std::collections::HashMap;
 use nalgebra::{Dynamic, Matrix, MatrixVec};
 
 use px8;
+use std::cmp;
+use num::clamp;
 
 pub const GLYPH: [[u16; 2]; 95] = [
     [0x0000, 0x0000], // space
-    [0x0000, 0x1700], // !
-    [0x0003, 0x0003], // "
-    [0x001f, 0x0a1f], // #
-    [0x000d, 0x1f0b], // $
-    [0x0013, 0x0419], // %
-    [0x0018, 0x171f], // &
-    [0x0000, 0x0102], // '
-    [0x0000, 0x110e], // (
+    [0x0017, 0x0000], // !
+    [0x0300, 0x0300], // "
+    [0x1f0a, 0x1f00], // #
+    [0x0d1f, 0x0b00], // $
+    [0x1304, 0x1900], // %
+    [0x1817, 0x1f00], // &
+    [0x0001, 0x0200], // '
+    [0x0011, 0x0e00], // (
     [0x000e, 0x1100], // )
-    [0x0015, 0x0e15], // *
-    [0x0004, 0x0e04], // +
-    [0x0000, 0x1020], // ,
-    [0x0004, 0x0404], // -
-    [0x0000, 0x2000], // .
-    [0x0001, 0x0e10], // /
+    [0x150e, 0x1500], // *
+    [0x040e, 0x0400], // +
+    [0x0010, 0x2000], // ,
+    [0x0404, 0x0400], // -
+    [0x0010, 0x0000], // .
+    [0x010e, 0x1000], // /
 
-    [0x003e, 0x223e], // 0
-    [0x0020, 0x3e22], // 1
-    [0x002e, 0x2a3a], // 2
-    [0x003e, 0x2a22], // 3
-    [0x003e, 0x080e], // 4
-    [0x003a, 0x2a2e], // 5
-    [0x0038, 0x283e], // 6
-    [0x003e, 0x0202], // 7
-    [0x003e, 0x2a3e], // 8
-    [0x003e, 0x0a0e], // 9
+    [0x1f11, 0x1f00], // 0
+    [0x101f, 0x1100], // 1
+    [0x1715, 0x1d00], // 2
+    [0x1f15, 0x1100], // 3
+    [0x1f04, 0x0700], // 4
+    [0x1d15, 0x1700], // 5
+    [0x1d15, 0x1f00], // 6
+    [0x1f01, 0x0100], // 7
+    [0x1f15, 0x1f00], // 8
+    [0x1f05, 0x0700], // 9
 
     [0x000a, 0x0000], // :
     [0x000a, 0x1000], // ;
-    [0x0011, 0x0a04], // <
-    [0x000a, 0x0a0a], // =
-    [0x0004, 0x0a11], // >
+    [0x110a, 0x0400], // <
+    [0x0a0a, 0x0a00], // =
+    [0x040a, 0x1100], // >
     [0x0715, 0x0100], // ?
-    [0x0006, 0x110E], // @
+    [0x1611, 0x0e00], // @
 
-    [0x1e09, 0x091e], // A
-    [0x0a15, 0x151f], // B
-    [0x0a11, 0x110e], // C
-    [0x0e11, 0x111f], // D
-    [0x1115, 0x151f], // E
-    [0x0105, 0x051f], // F
-    [0x0c15, 0x110e], // G
-    [0x1f04, 0x041f], // H
-    [0x0011, 0x1f11], // I
-    [0x010f, 0x1108], // J
-    [0x110a, 0x041f], // K
-    [0x1010, 0x101f], // L
-    [0x1f07, 0x071f], // M
-    [0x1f04, 0x021f], // N
-    [0x0e11, 0x110e], // O
-    [0x0609, 0x091f], // P
-    [0x1619, 0x110e], // Q
-    [0x1609, 0x091f], // R
-    [0x0915, 0x1512], // S
-    [0x0101, 0x1f01], // T
-    [0x0f10, 0x100f], // U
-    [0x0304, 0x081f], // V
-    [0x1f18, 0x181f], // W
-    [0x1b04, 0x041b], // X
-    [0x0304, 0x1c03], // Y
-    [0x1315, 0x1519], // Z
+    [0x1f05, 0x1f00], // A
+    [0x1b15, 0x1f00], // B
+    [0x1111, 0x0e00], // C
+    [0x1e11, 0x1f00], // D
+    [0x1115, 0x1f00], // E
+    [0x0105, 0x1f00], // F
+    [0x1911, 0x1e00], // G
+    [0x1f04, 0x1f00], // H
+    [0x111f, 0x1100], // I
+    [0x011f, 0x1100], // J
+    [0x1b04, 0x1f00], // K
+    [0x1010, 0x1f00], // L
+    [0x1f03, 0x1f00], // M
+    [0x1e01, 0x1f00], // N
+    [0x0f11, 0x1e00], // O
+    [0x0705, 0x1f00], // P
+    [0x1619, 0x0e00], // Q
+    [0x1b05, 0x1f00], // R
+    [0x0d15, 0x1600], // S
+    [0x011f, 0x0100], // T
+    [0x1f10, 0x0f00], // U
+    [0x0f10, 0x0f00], // V
+    [0x1f18, 0x1f00], // W
+    [0x1b04, 0x1b00], // X
+    [0x1f14, 0x1700], // Y
+    [0x1315, 0x1900], // Z
 
     [0x0011, 0x1F00], // [
-    [0x0010, 0x0e01], // \
+    [0x100e, 0x0100], // \
     [0x001F, 0x1100], // ]
-    [0x0002, 0x0102], // ^
-    [0x1010, 0x1010], // _
+    [0x0201, 0x0200], // ^
+    [0x1010, 0x1000], // _
     [0x0201, 0x0000], // `
 
-    [0x001c, 0x1408], // a
-    [0x0008, 0x141f], // b
-    [0x0014, 0x1408], // c
-    [0x001f, 0x1408], // d
-    [0x0014, 0x140c], // e
-    [0x0005, 0x1e04], // f
-    [0x003c, 0x5458], // g
-    [0x0018, 0x041f], // h
-    [0x0000, 0x1d00], // i
-    [0x0000, 0x1d20], // j
-    [0x0014, 0x081f], // k
-    [0x0000, 0x100f], // l
-    [0x001c, 0x0c1c], // m
-    [0x0018, 0x041c], // n
-    [0x0008, 0x1408], // o
-    [0x0018, 0x147c], // p
-    [0x007c, 0x140c], // q
-    [0x0004, 0x0418], // r
-    [0x0004, 0x1c10], // s
-    [0x0014, 0x0e04], // t
-    [0x001c, 0x100c], // u
-    [0x000c, 0x180c], // v
-    [0x001c, 0x181c], // w
-    [0x0014, 0x0814], // x
-    [0x003c, 0x505c], // y
-    [0x0010, 0x1c04], // z
+    [0x1c14, 0x0800], // a
+    [0x0814, 0x1f00], // b
+    [0x1414, 0x0800], // c
+    [0x1f14, 0x0800], // d
+    [0x1414, 0x0c00], // e
+    [0x051e, 0x0400], // f
+    [0x3c54, 0x5800], // g
+    [0x1804, 0x1f00], // h
+    [0x001d, 0x0000], // i
+    [0x001d, 0x2000], // j
+    [0x1408, 0x1f00], // k
+    [0x100f, 0x0000], // l
+    [0x1c0c, 0x1c00], // m
+    [0x1804, 0x1c00], // n
+    [0x0814, 0x0800], // o
+    [0x1814, 0x7c00], // p
+    [0x7c14, 0x0c00], // q
+    [0x0404, 0x1800], // r
+    [0x041c, 0x1000], // s
+    [0x140e, 0x0400], // t
+    [0x1c10, 0x0c00], // u
+    [0x0c18, 0x0c00], // v
+    [0x1c18, 0x1c00], // w
+    [0x1408, 0x1400], // x
+    [0x3c50, 0x5c00], // y
+    [0x101c, 0x0400], // z
 
-    [0x0011, 0x1b04], // {
+    [0x111f, 0x0400], // {
     [0x001F, 0x0000], // |
-    [0x041b, 0x1100], // }
-    [0x0102, 0x0102], // ~
+    [0x041f, 0x1100], // }
+    [0x0604, 0x0c00], // ~
 ];
 
 type DMatrixu32 = Matrix<u32, Dynamic, Dynamic, MatrixVec<u32, Dynamic, Dynamic>>;
@@ -371,22 +372,21 @@ impl Camera {
     }
 }
 
+// Clipping rectangle is exclusive of right and bottom edges
 pub struct Clipping {
-    pub x: i32,
-    pub y: i32,
-    pub w: i32,
-    pub h: i32,
-    pub clipped: bool,
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
 }
 
 impl Clipping {
-    pub fn new() -> Clipping {
+    pub fn new(left: i32, top: i32, right: i32, bottom: i32) -> Clipping {
         Clipping {
-            x: 0,
-            y: 0,
-            w: 0,
-            h: 0,
-            clipped: false,
+            left: clamp(left, 0, px8::SCREEN_WIDTH as i32),
+            top: clamp(top, 0, px8::SCREEN_HEIGHT as i32),
+            right: clamp(right, 0, px8::SCREEN_WIDTH as i32),
+            bottom: clamp(bottom, 0, px8::SCREEN_HEIGHT as i32),
         }
     }
 }
@@ -401,10 +401,10 @@ pub struct Screen {
 
     pub map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH],
 
-    pub transparency: HashMap<u32, u8>,
+    pub transparency_map: [bool; 256],
 
     pub color: u32,
-    pub colors: HashMap<u32, u32>,
+    pub color_map: [u8; 256],
 
     pub camera: Camera,
     pub clipping: Clipping,
@@ -424,13 +424,13 @@ impl Screen {
             dyn_sprites: Vec::new(),
             map: [[0; px8::MAP_HEIGHT]; px8::MAP_WIDTH],
 
-            transparency: HashMap::new(),
-            colors: HashMap::new(),
+            transparency_map: [false; 256],
+            color_map: [0; 256],
             color: 0,
 
             camera: Camera::new(),
 
-            clipping: Clipping::new(),
+            clipping: Clipping::new(0, 0, px8::SCREEN_WIDTH as i32, px8::SCREEN_HEIGHT as i32),
         }
     }
 
@@ -441,16 +441,18 @@ impl Screen {
     }
 
     pub fn _reset_transparency(&mut self) {
-        self.transparency.clear();
-        self.transparency.insert(0, 1);
+        self.transparency_map = [false; 256];
+        self.transparency_map[0] = true;
     }
 
     pub fn _reset_colors(&mut self) {
-        self.colors.clear();
+        for i in 0..256 {
+            self.color_map[i] = i as u8;
+        }
     }
 
     pub fn _reset_clip(&mut self) {
-        self.clipping.clipped = false;
+        self.clipping = Clipping::new(0, 0, px8::SCREEN_WIDTH as i32, px8::SCREEN_HEIGHT as i32);
     }
 
     pub fn save(&mut self) {
@@ -466,28 +468,17 @@ impl Screen {
     }
 
     pub fn _find_color(&mut self, col: i32) -> u32 {
-        // no specified color
-        if col == -1 {
-            return self.color;
-        }
-
-        return col as u32;
+        if col == -1 { self.color } else { col as u32 }
     }
 
     pub fn camera(&mut self, x: i32, y: i32) {
-        if x == -1 && y == -1 {
-            self.camera.x = 0;
-            self.camera.y = 0;
-        } else {
-            self.camera.x = x;
-            self.camera.y = y;
-        }
+        self.camera.x = x;
+        self.camera.y = y;
     }
 
     pub fn set_sprites(&mut self, sprites: Vec<Sprite>) {
         self.sprites = sprites;
     }
-
 
     pub fn set_map(&mut self, map: [[u32; px8::MAP_HEIGHT]; px8::MAP_WIDTH]) {
         self.map = map;
@@ -508,56 +499,32 @@ impl Screen {
         }
     }
 
+    pub fn pixel_offset(x: i32, y: i32) -> usize {
+        (x as usize) + ((y as usize) * px8::SCREEN_WIDTH)
+    }
+
     pub fn putpixel_direct(&mut self, x: i32, y: i32, col: u32) {
-        let x = x as usize;
-        let y = y as usize;
-
-        self.back_buffer[x + y * px8::SCREEN_WIDTH] = col;
-
-        let col_rgb = px8::PALETTE.lock().unwrap().get_rgb(col);
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3] = col_rgb.b;
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3 + 1] = col_rgb.g;
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3 + 2] = col_rgb.r;
+        self.back_buffer[Screen::pixel_offset(x, y)] = col as u8;
     }
 
     pub fn putpixel_(&mut self, x: i32, y: i32, col: u32) {
-        let x_i = x - self.camera.x;
-        let y_i = y - self.camera.y;
+        // Make camera adjustment
+        let x = x - self.camera.x;
+        let y = y - self.camera.y;
 
-        // Camera
-        let x = (x as i32 - self.camera.x) as usize;
-        let y = (y as i32 - self.camera.y) as usize;
-        let mut col = col;
-
-        if x >= px8::SCREEN_WIDTH || y >= px8::SCREEN_HEIGHT {
+        // Clip
+        if x < self.clipping.left || x >= self.clipping.right || y < self.clipping.top ||
+           y >= self.clipping.bottom {
             return;
-        }
+        };
 
-        // Clipped
-        if self.clipping.clipped {
-            if !(x_i >= (self.clipping.x - self.camera.x) &&
-                 x_i < (self.clipping.x + self.clipping.w - self.camera.x) &&
-                 y_i >= (self.clipping.y - self.camera.y) &&
-                 y_i < (self.clipping.y + self.clipping.h - self.camera.y)) {
-                return;
-            }
-        }
+        let draw_col = self.color_map[(col & 0xFF) as usize];
 
-        match self.colors.get(&col) {
-            Some(&value) => col = value,
-            None => (),
-        }
-
-        self.back_buffer[x + y * px8::SCREEN_WIDTH] = col;
-
-        let col_rgb = px8::PALETTE.lock().unwrap().get_rgb(col);
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3] = col_rgb.b;
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3 + 1] = col_rgb.g;
-        self.buffer_rgb[(x + y * px8::SCREEN_WIDTH) * 3 + 2] = col_rgb.r;
+        self.back_buffer[Screen::pixel_offset(x, y)] = draw_col;
     }
 
     pub fn color(&mut self, col: i32) {
-        if col != -1 {
+        if (col >= 0) && (col <= 255) {
             self.color = col as u32;
         }
     }
@@ -602,44 +569,36 @@ impl Screen {
     }
 
     pub fn fget(&mut self, idx: u32, v: u8) -> bool {
-        if idx as usize > self.sprites.len() {
-            return false;
+        if (idx as usize) < self.sprites.len() {
+            self.sprites[idx as usize].is_flags_set(v as u8)
+        } else {
+            false
         }
-
-        self.sprites[idx as usize].is_flags_set(v as u8)
     }
 
     pub fn fget_all(&mut self, idx: u32) -> u8 {
-        if idx as usize > self.sprites.len() {
-            return self.sprites[idx as usize].get_flags();
+        if (idx as usize) < self.sprites.len() {
+            self.sprites[idx as usize].get_flags()
+        } else {
+            0
         }
-
-        0
     }
 
     pub fn fset(&mut self, idx: u32, flag: u8, value: bool) {
-        if idx as usize > self.sprites.len() {
-            return;
+        if (idx as usize) < self.sprites.len() {
+            self.sprites[idx as usize].set_flag(flag, value);
         }
-
-        self.sprites[idx as usize].set_flag(flag, value);
     }
 
     pub fn fset_all(&mut self, idx: u32, flags: u8) {
-        if idx as usize > self.sprites.len() {
-            return;
+        if (idx as usize) < self.sprites.len() {
+            self.sprites[idx as usize].set_flags(flags);
         }
-
-        self.sprites[idx as usize].set_flags(flags);
     }
-
 
     pub fn cls(&mut self) {
-        // Fastest way to clean the buffer ?
         self.back_buffer = px8::SCREEN_EMPTY;
-        self.buffer_rgb = Box::new([0; px8::SCREEN_PIXELS_RGB]);
     }
-
 
     pub fn force_print(&mut self, string: String, x: i32, y: i32, col: i32) {
         self._print(string, x, y, col, true);
@@ -723,25 +682,40 @@ impl Screen {
     }
 
     pub fn hline(&mut self, x1: i32, x2: i32, y: i32, col: i32) {
-        self.line(x1, y, x2, y, col);
+        let x_min = cmp::min(x1, x2);
+        let x_max = cmp::max(x1, x2);
+
+        for x in x_min..(x_max + 1) {
+            self.putpixel(x, y, col as u32);
+        }
     }
 
     pub fn rect(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, col: i32) {
-        self.line(x0, y0, x0, y1, col);
-        self.line(x0, y0, x1, y0, col);
-        self.line(x0, y1, x1, y1, col);
-        self.line(x1, y0, x1, y1, col);
+        let x_min = cmp::min(x0, x1);
+        let x_max = cmp::max(x0, x1);
+        let y_min = cmp::min(y0, y1);
+        let y_max = cmp::max(y0, y1);
+
+        for x in x_min..(x_max + 1) {
+            self.putpixel(x, y_min, col as u32);
+            self.putpixel(x, y_max, col as u32);
+        }
+        for y in (y_min + 1)..y_max {
+            self.putpixel(x0, y, col as u32);
+            self.putpixel(x1, y, col as u32);
+        }
     }
 
     pub fn rectfill(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, col: i32) {
-        self.line(x0, y0, x0, y1, col);
-        self.line(x0, y0, x1, y0, col);
-        self.line(x0, y1, x1, y1, col);
-        self.line(x1, y0, x1, y1, col);
+        let x_min = cmp::min(x0, x1);
+        let x_max = cmp::max(x0, x1);
+        let y_min = cmp::min(y0, y1);
+        let y_max = cmp::max(y0, y1);
 
-
-        for y in y0..y1 {
-            self.line(x0, y, x1, y, col)
+        for y in y_min..(y_max + 1) {
+            for x in x_min..(x_max + 1) {
+                self.putpixel(x, y, col as u32);
+            }
         }
     }
 
@@ -762,18 +736,13 @@ impl Screen {
     }
 
     pub fn clip(&mut self, x: i32, y: i32, w: i32, h: i32) {
-        // reset
         if x == -1 && y == -1 && w == -1 && h == -1 {
-            self.clipping.clipped = false;
+            self._reset_clip();
             return;
         }
 
-        self.clipping.x = x;
-        self.clipping.y = y;
-        self.clipping.w = w;
-        self.clipping.h = h;
-
-        self.clipping.clipped = true;
+        // Clipping rectangle is exclusive of right and bottom edges
+        self.clipping = Clipping::new(x, y, x + w, y + h);
     }
 
     // Original algorithm from SDL2 gfx project
@@ -1061,8 +1030,6 @@ impl Screen {
 
         while idx < vx.len() - 1 {
             self.line(vx[idx], vy[idx], vx[idx + 1], vy[idx + 1], col);
-
-
             idx += 1;
         }
 
@@ -1089,7 +1056,7 @@ impl Screen {
         for i in 0..h {
             for j in 0..w {
                 let sprite_offset = ((j + n) + i * 16) as usize;
-                if sprite_offset > self.sprites.len() {
+                if sprite_offset >= self.sprites.len() {
                     break;
                 }
 
@@ -1400,21 +1367,18 @@ impl Screen {
     }
 
     pub fn is_transparent(&mut self, value: u32) -> bool {
-        match self.transparency.get(&(value as u32)) {
-            Some(&1) => {
-                return true;
-            }
-            Some(&_) => (),
-            None => (),
+        if value <= 255 {
+            self.transparency_map[value as usize]
+        } else {
+            false
         }
-        return false;
     }
 
     pub fn pal(&mut self, c0: i32, c1: i32) {
         if c0 < 0 || c1 < 0 {
             self._reset_colors();
         } else {
-            self.colors.insert(c0 as u32, c1 as u32);
+            self.color_map[c0 as usize] = c1 as u8;
         }
     }
 
@@ -1422,12 +1386,14 @@ impl Screen {
         if c == -1 {
             self._reset_transparency();
         } else {
-            self.transparency.insert(c as u32, t as u8);
+            if (c >= 0) && (c <= 255) {
+                self.transparency_map[c as usize] = t;
+            }
         }
     }
 
-    pub fn peek(&mut self, addr: u32) -> u32 {
-        return self.back_buffer[addr as usize] << 8 + self.back_buffer[(addr + 1) as usize];
+    pub fn peek(&mut self, addr: u32) -> u8 {
+        self.back_buffer[addr as usize]
     }
 
     pub fn poke(&mut self, _addr: u32, _val: u16) {}
@@ -1448,11 +1414,7 @@ impl Screen {
         while idx < len * 2 {
             let value = a[idx as usize] as u32;
 
-            self.back_buffer[(dest_addr + idx) as usize] = value;
-            let col_rgb = px8::PALETTE.lock().unwrap().get_rgb(value);
-            self.buffer_rgb[(dest_addr + idx) as usize * 3] = col_rgb.b;
-            self.buffer_rgb[(dest_addr + idx) as usize * 3 + 1] = col_rgb.g;
-            self.buffer_rgb[(dest_addr + idx) as usize * 3 + 2] = col_rgb.r;
+            self.back_buffer[(dest_addr + idx) as usize] = value as u8;
 
             idx += 1;
         }

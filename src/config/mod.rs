@@ -3,6 +3,7 @@ pub mod controllers;
 
 use self::keys::PX8Key;
 use sdl2::mouse::MouseButton;
+use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
 
 pub struct Mouse {
@@ -26,59 +27,47 @@ impl Mouse {
 }
 pub struct PlayerKeys {
     frames: HashMap<PX8Key, f64>,
-
-    enter: bool,
-    enter_quick: bool,
-    pause: bool,
-    pause_quick: bool,
-
-    right: bool,
-    right_quick: bool,
-
-    left: bool,
-    left_quick: bool,
-
-    up: bool,
-    up_quick: bool,
-
-    down: bool,
-    down_quick: bool,
-
-    o: bool,
-    o_quick: bool,
-
-    x: bool,
-    x_quick: bool,
+    keys: HashMap<PX8Key, bool>,
+    keys_quick: HashMap<PX8Key, bool>,
 }
 
 impl PlayerKeys {
     pub fn new() -> PlayerKeys {
+        let mut keys = HashMap::new();
+        let mut keys_quick = HashMap::new();
+
+        keys.insert(PX8Key::Down, false);
+        keys.insert(PX8Key::Up, false);
+        keys.insert(PX8Key::Left, false);
+        keys.insert(PX8Key::Right, false);
+        keys.insert(PX8Key::O, false);
+        keys.insert(PX8Key::X, false);
+        keys.insert(PX8Key::Enter, false);
+        keys.insert(PX8Key::Pause, false);
+
+        keys_quick.insert(PX8Key::Down, false);
+        keys_quick.insert(PX8Key::Up, false);
+        keys_quick.insert(PX8Key::Left, false);
+        keys_quick.insert(PX8Key::Right, false);
+        keys_quick.insert(PX8Key::O, false);
+        keys_quick.insert(PX8Key::X, false);
+        keys_quick.insert(PX8Key::Enter, false);
+        keys_quick.insert(PX8Key::Pause, false);
+
         PlayerKeys {
             frames: HashMap::new(),
-            enter: false,
-            enter_quick: false,
-            pause: false,
-            pause_quick: false,
-
-            right: false,
-            right_quick: false,
-            left: false,
-            left_quick: false,
-            up: false,
-            up_quick: false,
-            down: false,
-            down_quick: false,
-            o: false,
-            o_quick: false,
-            x: false,
-            x_quick: false,
+            keys: keys,
+            keys_quick: keys_quick,
         }
     }
 }
 
 pub struct Players {
-    pub keys: HashMap<u8, PlayerKeys>,
+    pub pkeys: HashMap<u8, PlayerKeys>,
     pub mouse: Mouse,
+    pub akeys: HashMap<Keycode, bool>,
+    pub akeys_quick: HashMap<Keycode, bool>,
+    pub all_frames: HashMap<Keycode, f64>,
 }
 
 impl Players {
@@ -88,8 +77,11 @@ impl Players {
         keys.insert(1, PlayerKeys::new());
 
         Players {
-            keys: keys,
+            pkeys: keys,
             mouse: Mouse::new(),
+            akeys: HashMap::new(),
+            akeys_quick: HashMap::new(),
+            all_frames: HashMap::new(),
         }
     }
 
@@ -126,193 +118,84 @@ impl Players {
             self.mouse.state = 0;
         }
 
-        for (_, keys) in self.keys.iter_mut() {
-            if keys.left {
-                match keys.frames.get(&PX8Key::Left) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.left_quick = false;
+        for (key_val, value) in self.akeys.iter_mut() {
+            if *value {
+                match self.all_frames.get(&key_val) {
+                    Some(&delay_value) => {
+                        if elapsed - delay_value >= 0.01 {
+                            self.akeys_quick.insert(*key_val, false);
                         } else {
-                            keys.left_quick = true;
+                            self.akeys_quick.insert(*key_val, true);
                         }
                     }
                     _ => {
-                        keys.left_quick = true;
-                    }
-                }
-            }
-
-            if keys.right {
-                match keys.frames.get(&PX8Key::Right) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.right_quick = false;
-                        } else {
-                            keys.right_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.right_quick = true;
-                    }
-                }
-            }
-
-            if keys.up {
-                match keys.frames.get(&PX8Key::Up) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.up_quick = false;
-                        } else {
-                            keys.up_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.up_quick = true;
-                    }
-                }
-            }
-
-            if keys.down {
-                match keys.frames.get(&PX8Key::Down) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.down_quick = false;
-                        } else {
-                            keys.down_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.down_quick = true;
-                    }
-                }
-            }
-
-
-            if keys.o {
-                match keys.frames.get(&PX8Key::O) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.o_quick = false;
-                        } else {
-                            keys.o_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.o_quick = true;
-                    }
-                }
-            }
-
-            if keys.x {
-                match keys.frames.get(&PX8Key::X) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.x_quick = false;
-                        } else {
-                            keys.x_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.x_quick = true;
-                    }
-                }
-            }
-
-            if keys.pause {
-                match keys.frames.get(&PX8Key::Pause) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.pause_quick = false;
-                        } else {
-                            keys.pause_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.pause_quick = true;
-                    }
-                }
-            }
-
-            if keys.enter {
-                match keys.frames.get(&PX8Key::Enter) {
-                    Some(&value) => {
-                        if elapsed - value >= 0.01 {
-                            keys.enter_quick = false;
-                        } else {
-                            keys.enter_quick = true;
-                        }
-                    }
-                    _ => {
-                        keys.enter_quick = true;
+                        self.akeys_quick.insert(*key_val, true);
                     }
                 }
             }
         }
-    }
 
-    pub fn key_down(&mut self, player: u8, key: PX8Key, repeat: bool, elapsed: f64) {
-        debug!("KEY {:?} {:?} {:?} Player {:?} -> DOWN",
-               key,
-               repeat,
-               elapsed,
-               player);
+        for (_, keys) in self.pkeys.iter_mut() {
+            let ref mut current_keys = keys.keys;
 
-        match self.keys.get_mut(&player) {
-            Some(keys) => {
-                match key {
-                    PX8Key::Right => {
-                        if !keys.right {
-                            keys.right_quick = true;
-                        }
-                        keys.right = true;
-                    }
-                    PX8Key::Left => {
-                        if !keys.left {
-                            keys.left_quick = true;
-                        }
-                        keys.left = true;
-                    }
-                    PX8Key::Up => {
-                        if !keys.up {
-                            keys.up_quick = true;
-                        }
-                        keys.up = true
-                    }
-                    PX8Key::Down => {
-                        if !keys.down {
-                            keys.down_quick = true;
-                        }
-                        keys.down = true;
-                    }
-                    PX8Key::O => {
-                        if !keys.o {
-                            keys.o_quick = true;
-                        }
-                        keys.o = true;
-                    }
-                    PX8Key::X => {
-                        if !keys.x {
-                            keys.x_quick = true;
-                        }
+            let mut modif_quick:HashMap<PX8Key, bool> = HashMap::new();
 
-                        keys.x = true;
-                    }
-                    PX8Key::Enter => {
-                        if !keys.enter {
-                            keys.enter_quick = true;
+            for (key_val, value) in current_keys.iter_mut() {
+                if *value {
+                    match keys.frames.get(&key_val) {
+                        Some(&delay_value) => {
+                            if elapsed - delay_value >= 0.01 {
+                                modif_quick.insert(*key_val, false);
+                            } else {
+                                modif_quick.insert(*key_val, true);
+                            }
                         }
-
-                        keys.enter = true
-                    }
-                    PX8Key::Pause => {
-                        if !keys.pause {
-                            keys.pause_quick = true;
+                        _ => {
+                            modif_quick.insert(*key_val, true);
                         }
-
-                        keys.pause = true;
                     }
                 }
+            }
 
+            for (key_val, value) in modif_quick {
+                keys.keys_quick.insert(key_val, value);
+            }
+        }
+    }
+
+    pub fn key_down(&mut self, keycode: Keycode, repeat: bool, elapsed: f64) {
+        debug!("KEY {:?} {:?} {:?} -> DOWN",
+               keycode,
+               repeat,
+               elapsed);
+
+        if self.akeys.contains_key(&keycode) {
+            if !self.akeys[&keycode] {
+                self.akeys_quick.insert(keycode, true);
+            }
+        }
+        self.akeys.insert(keycode, true);
+        self.all_frames.insert(keycode, elapsed);
+
+        if let (Some(key), player) = self::keys::map_keycode(keycode) {
+            self.key_down_direct(player, key, repeat, elapsed);
+        }
+    }
+
+    pub fn key_down_direct(&mut self, player: u8, key: PX8Key, repeat: bool, elapsed: f64) {
+        debug!("KEY {:?} {:?} {:?} Player {:?} -> DOWN",
+        key,
+        repeat,
+        elapsed,
+        player);
+
+        match self.pkeys.get_mut(&player) {
+            Some(keys) => {
+                if !keys.keys[&key] {
+                    keys.keys_quick.insert(key, true);
+                }
+
+                keys.keys.insert(key, true);
                 if !repeat {
                     keys.frames.insert(key, elapsed);
                 }
@@ -322,81 +205,60 @@ impl Players {
     }
 
     pub fn key_direc_hor_up(&mut self, player: u8) {
-        match self.keys.get_mut(&player) {
+        match self.pkeys.get_mut(&player) {
             Some(keys) => {
-                keys.right = false;
-                keys.left = false;
+                keys.keys.insert(PX8Key::Right, false);
+                keys.keys.insert(PX8Key::Left, false);
             }
             None => (),
         }
     }
 
     pub fn key_direc_ver_up(&mut self, player: u8) {
-        match self.keys.get_mut(&player) {
+        match self.pkeys.get_mut(&player) {
             Some(keys) => {
-                keys.up = false;
-                keys.down = false;
+                keys.keys.insert(PX8Key::Up, false);
+                keys.keys.insert(PX8Key::Down, false);
             }
             None => (),
         }
     }
 
-    pub fn key_up(&mut self, player: u8, key: PX8Key) {
+    pub fn key_up(&mut self, keycode: Keycode) {
+        debug!("KEYCODE {:?} UP", keycode);
+
+        self.akeys.insert(keycode, false);
+        self.akeys_quick.insert(keycode, false);
+
+        if let (Some(key), player) = self::keys::map_keycode(keycode) {
+            self.key_up_direct(player, key);
+        }
+    }
+
+    pub fn key_up_direct(&mut self, player: u8, key: PX8Key) {
         debug!("KEY {:?} Player {:?} -> UP", key, player);
 
-        match self.keys.get_mut(&player) {
+        match self.pkeys.get_mut(&player) {
             Some(keys) => {
-                match key {
-                    PX8Key::Right => {
-                        keys.right = false;
-                        keys.right_quick = false;
-                    }
-                    PX8Key::Left => {
-                        keys.left = false;
-                        keys.left_quick = false;
-                    }
-                    PX8Key::Up => {
-                        keys.up = false;
-                        keys.up_quick = false;
-                    }
-                    PX8Key::Down => {
-                        keys.down = false;
-                        keys.down_quick = false;
-                    }
-                    PX8Key::O => {
-                        keys.o = false;
-                        keys.o_quick = false;
-                    }
-                    PX8Key::X => {
-                        keys.x = false;
-                        keys.x_quick = false;
-                    }
-                    PX8Key::Enter => {
-                        keys.enter = false;
-                        keys.enter_quick = false;
-                    }
-                    PX8Key::Pause => {
-                        keys.pause = false;
-                        keys.pause_quick = false;
-                    }
-                }
+                keys.keys.insert(key, false);
+                keys.keys_quick.insert(key, false);
             }
             None => (),
         }
     }
 
     pub fn get_value(&self, player: u8, index: u8) -> u8 {
-        match self.keys.get(&player) {
+        match self.pkeys.get(&player) {
             Some(keys) => {
                 match index {
-                    0 if keys.left => 1,
-                    1 if keys.right => 1,
-                    2 if keys.up => 1,
-                    3 if keys.down => 1,
-                    4 if keys.o => 1,
-                    5 if keys.x => 1,
-                    6 if keys.enter => 1,
-                    7 if keys.pause => 1,
+                    0 if keys.keys[&PX8Key::Left] => 1,
+                    1 if keys.keys[&PX8Key::Right] => 1,
+                    2 if keys.keys[&PX8Key::Up] => 1,
+                    3 if keys.keys[&PX8Key::Down] => 1,
+                    4 if keys.keys[&PX8Key::O] => 1,
+                    5 if keys.keys[&PX8Key::X] => 1,
+                    6 if keys.keys[&PX8Key::Enter] => 1,
+                    7 if keys.keys[&PX8Key::Pause] => 1,
                     _ => 0,
                 }
             }
@@ -406,17 +268,17 @@ impl Players {
 
 
     pub fn get_value_quick(&mut self, player: u8, index: u8) -> u8 {
-        match self.keys.get(&player) {
+        match self.pkeys.get(&player) {
             Some(keys) => {
                 match index {
-                    0 if keys.left_quick => 1,
-                    1 if keys.right_quick => 1,
-                    2 if keys.up_quick => 1,
-                    3 if keys.down_quick => 1,
-                    4 if keys.o_quick => 1,
-                    5 if keys.x_quick => 1,
-                    6 if keys.enter_quick => 1,
-                    7 if keys.pause_quick => 1,
+                    0 if keys.keys_quick[&PX8Key::Left] => 1,
+                    1 if keys.keys_quick[&PX8Key::Right] => 1,
+                    2 if keys.keys_quick[&PX8Key::Up] => 1,
+                    3 if keys.keys_quick[&PX8Key::Down] => 1,
+                    4 if keys.keys_quick[&PX8Key::O] => 1,
+                    5 if keys.keys_quick[&PX8Key::X]=> 1,
+                    6 if keys.keys_quick[&PX8Key::Enter] => 1,
+                    7 if keys.keys_quick[&PX8Key::Pause] => 1,
                     _ => 0,
                 }
             }
@@ -428,8 +290,39 @@ impl Players {
         self.get_value(player, index) == 1
     }
 
+
+    pub fn btn2(&mut self, c: i32) -> bool {
+        match Keycode::from_i32(c as i32) {
+            Some(keycode) => {
+                match self.akeys.get(&keycode) {
+                    Some(v) => {
+                        return *v;
+                    }
+                    None => ()
+                }
+            }
+            None => ()
+        }
+        false
+    }
+
     pub fn btnp(&mut self, player: u8, index: u8) -> bool {
         self.get_value_quick(player, index) == 1
+    }
+
+    pub fn btnp2(&mut self, c: i32) -> bool {
+        match Keycode::from_i32(c as i32) {
+            Some(keycode) => {
+                match self.akeys_quick.get(&keycode) {
+                    Some(v) => {
+                        return *v;
+                    }
+                    None => ()
+                }
+            }
+            None => ()
+        }
+        false
     }
 
     pub fn mouse_coordinate(&mut self, index: u8) -> i32 {
