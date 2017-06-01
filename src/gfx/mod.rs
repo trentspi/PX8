@@ -1,3 +1,5 @@
+mod fonts;
+
 use std::fmt;
 use nalgebra::{Dynamic, Matrix, MatrixVec};
 
@@ -5,109 +7,24 @@ use px8;
 use std::cmp;
 use num::clamp;
 
-pub const GLYPH: [[u16; 2]; 95] = [
-    [0x0000, 0x0000], // space
-    [0x0017, 0x0000], // !
-    [0x0300, 0x0300], // "
-    [0x1f0a, 0x1f00], // #
-    [0x0d1f, 0x0b00], // $
-    [0x1304, 0x1900], // %
-    [0x1817, 0x1f00], // &
-    [0x0001, 0x0200], // '
-    [0x0011, 0x0e00], // (
-    [0x000e, 0x1100], // )
-    [0x150e, 0x1500], // *
-    [0x040e, 0x0400], // +
-    [0x0010, 0x2000], // ,
-    [0x0404, 0x0400], // -
-    [0x0010, 0x0000], // .
-    [0x010e, 0x1000], // /
-
-    [0x1f11, 0x1f00], // 0
-    [0x101f, 0x1100], // 1
-    [0x1715, 0x1d00], // 2
-    [0x1f15, 0x1100], // 3
-    [0x1f04, 0x0700], // 4
-    [0x1d15, 0x1700], // 5
-    [0x1d15, 0x1f00], // 6
-    [0x1f01, 0x0100], // 7
-    [0x1f15, 0x1f00], // 8
-    [0x1f05, 0x0700], // 9
-
-    [0x000a, 0x0000], // :
-    [0x000a, 0x1000], // ;
-    [0x110a, 0x0400], // <
-    [0x0a0a, 0x0a00], // =
-    [0x040a, 0x1100], // >
-    [0x0715, 0x0100], // ?
-    [0x1611, 0x0e00], // @
-
-    [0x1f05, 0x1f00], // A
-    [0x1b15, 0x1f00], // B
-    [0x1111, 0x0e00], // C
-    [0x1e11, 0x1f00], // D
-    [0x1115, 0x1f00], // E
-    [0x0105, 0x1f00], // F
-    [0x1911, 0x1e00], // G
-    [0x1f04, 0x1f00], // H
-    [0x111f, 0x1100], // I
-    [0x011f, 0x1100], // J
-    [0x1b04, 0x1f00], // K
-    [0x1010, 0x1f00], // L
-    [0x1f03, 0x1f00], // M
-    [0x1e01, 0x1f00], // N
-    [0x0f11, 0x1e00], // O
-    [0x0705, 0x1f00], // P
-    [0x1619, 0x0e00], // Q
-    [0x1b05, 0x1f00], // R
-    [0x0d15, 0x1600], // S
-    [0x011f, 0x0100], // T
-    [0x1f10, 0x0f00], // U
-    [0x0f10, 0x0f00], // V
-    [0x1f18, 0x1f00], // W
-    [0x1b04, 0x1b00], // X
-    [0x1f14, 0x1700], // Y
-    [0x1315, 0x1900], // Z
-
-    [0x0011, 0x1F00], // [
-    [0x100e, 0x0100], // \
-    [0x001F, 0x1100], // ]
-    [0x0201, 0x0200], // ^
-    [0x1010, 0x1000], // _
-    [0x0201, 0x0000], // `
-
-    [0x1c14, 0x0800], // a
-    [0x0814, 0x1f00], // b
-    [0x1414, 0x0800], // c
-    [0x1f14, 0x0800], // d
-    [0x1414, 0x0c00], // e
-    [0x051e, 0x0400], // f
-    [0x3c54, 0x5800], // g
-    [0x1804, 0x1f00], // h
-    [0x001d, 0x0000], // i
-    [0x001d, 0x2000], // j
-    [0x1408, 0x1f00], // k
-    [0x100f, 0x0000], // l
-    [0x1c0c, 0x1c00], // m
-    [0x1804, 0x1c00], // n
-    [0x0814, 0x0800], // o
-    [0x1814, 0x7c00], // p
-    [0x7c14, 0x0c00], // q
-    [0x0404, 0x1800], // r
-    [0x041c, 0x1000], // s
-    [0x140e, 0x0400], // t
-    [0x1c10, 0x0c00], // u
-    [0x0c18, 0x0c00], // v
-    [0x1c18, 0x1c00], // w
-    [0x1408, 0x1400], // x
-    [0x3c50, 0x5c00], // y
-    [0x101c, 0x0400], // z
-
-    [0x111f, 0x0400], // {
-    [0x001F, 0x0000], // |
-    [0x041f, 0x1100], // }
-    [0x0604, 0x0c00], // ~
-];
+// Fixed pitch font definition
+#[allow(dead_code)]
+pub struct Font {
+    // Width of glyph in pixels
+    glyph_width: i32,
+    // Height of glyph in pixels
+    glyph_height: i32,
+    // Number of x pixels before glyph
+    left_bearing: i32,
+    // Number of y pixels before glyph
+    top_bearing: i32,
+    // Horizontal distance to next character
+    advance_width: i32,
+    // Vertical distance between lines
+    line_height: i32,
+    // Glyph bitmap data - one byte per row, first bit in MSB
+    glyph_data: &'static [u8],
+}
 
 type DMatrixu32 = Matrix<u32, Dynamic, Dynamic, MatrixVec<u32, Dynamic, Dynamic>>;
 
@@ -157,7 +74,7 @@ impl DynSprite {
                 r_mat[((n_cols - (i + 1)) + j * n_cols) as usize] = tmp;
             }
         }
-        return r_mat;
+        r_mat
     }
 
     pub fn flip_y(&mut self) -> DMatrixu32 {
@@ -174,7 +91,7 @@ impl DynSprite {
                 r_mat[(j + (n_rows - (i + 1)) * n_cols) as usize] = tmp;
             }
         }
-        return r_mat;
+        r_mat
     }
 }
 
@@ -211,7 +128,7 @@ impl Sprite {
         Sprite { data: v, flags: 0 }
     }
 
-    pub fn is_flags_set(&mut self, value: u8) -> bool {
+    pub fn is_flags_set(&self, value: u8) -> bool {
         let mut value = value << 1;
 
         if value == 0 {
@@ -221,12 +138,12 @@ impl Sprite {
         (self.flags & value) != 0
     }
 
-    pub fn is_bit_flags_set(&mut self, value: u8) -> bool {
+    pub fn is_bit_flags_set(&self, value: u8) -> bool {
         (self.flags & value) != 0
     }
 
 
-    pub fn get_flags(&mut self) -> u8 {
+    pub fn get_flags(&self) -> u8 {
         self.flags
     }
 
@@ -246,17 +163,17 @@ impl Sprite {
         self.data[idx] = col;
     }
 
-    pub fn get_data(&mut self) -> String {
+    pub fn get_data(&self) -> String {
         let mut data = String::new();
 
-        for c in self.data.clone() {
+        for c in &self.data {
             data.push_str(&format!("{:?}", c));
         }
 
-        return data;
+        data
     }
 
-    pub fn get_line(&mut self, line: u32) -> String {
+    pub fn get_line(&self, line: u32) -> String {
         let mut data = String::new();
 
         let mut data_clone = self.data.clone();
@@ -269,47 +186,42 @@ impl Sprite {
             data.push_str(&format!("{:x}", c));
         }
 
-        return data;
+        data
     }
 
-    pub fn horizontal_reflection(&mut self) -> [u8; 64] {
-        let mut ret: [u8; 64] = self.to_u8_64_array();
-
-
-        for i in 0..4 {
-            for j in 0..8 {
-                let tmp = ret[(i + j * 8) as usize];
-                ret[(i + j * 8) as usize] = ret[((8 - (i + 1)) + j * 8) as usize];
-                ret[((8 - (i + 1)) + j * 8) as usize] = tmp;
-            }
-        }
-
-        return ret;
-    }
-
-    pub fn vertical_reflection(&mut self) -> [u8; 64] {
+    pub fn horizontal_reflection(&self) -> [u8; 64] {
         let mut ret: [u8; 64] = self.to_u8_64_array();
 
         for i in 0..4 {
             for j in 0..8 {
-                let tmp = ret[(j + i * 8) as usize];
-                ret[(j + i * 8) as usize] = ret[(j + (8 - (i + 1)) * 8) as usize];
-                ret[(j + (8 - (i + 1)) * 8) as usize] = tmp;
+                ret.swap((i + j * 8) as usize, ((8 - (i + 1)) + j * 8) as usize);
             }
         }
 
-        return ret;
+        ret
     }
 
-    pub fn flip_x(&mut self) -> Sprite {
-        return Sprite::new(self.horizontal_reflection());
+    pub fn vertical_reflection(&self) -> [u8; 64] {
+        let mut ret: [u8; 64] = self.to_u8_64_array();
+
+        for i in 0..4 {
+            for j in 0..8 {
+                ret.swap((j + i * 8) as usize, (j + (8 - (i + 1)) * 8) as usize);
+            }
+        }
+
+        ret
     }
 
-    pub fn flip_y(&mut self) -> Sprite {
-        return Sprite::new(self.vertical_reflection());
+    pub fn flip_x(&self) -> Sprite {
+        Sprite::new(self.horizontal_reflection())
     }
 
-    pub fn to_u8_64_array(&mut self) -> [u8; 64] {
+    pub fn flip_y(&self) -> Sprite {
+        Sprite::new(self.vertical_reflection())
+    }
+
+    pub fn to_u8_64_array(&self) -> [u8; 64] {
         let mut arr = [0u8; 64];
         for (place, element) in arr.iter_mut().zip(self.data.iter()) {
             *place = *element;
@@ -408,6 +320,7 @@ pub struct Screen {
 
     pub camera: Camera,
     pub clipping: Clipping,
+    pub font: &'static Font,
 }
 
 unsafe impl Send for Screen {}
@@ -431,6 +344,7 @@ impl Screen {
             camera: Camera::new(),
 
             clipping: Clipping::new(0, 0, px8::SCREEN_WIDTH as i32, px8::SCREEN_HEIGHT as i32),
+            font: &fonts::pico8::FONT,
         }
     }
 
@@ -438,6 +352,7 @@ impl Screen {
         self._reset_colors();
         self._reset_transparency();
         self._reset_clip();
+        self.color = 0;
     }
 
     pub fn _reset_transparency(&mut self) {
@@ -504,6 +419,10 @@ impl Screen {
     }
 
     pub fn putpixel_direct(&mut self, x: i32, y: i32, col: u32) {
+        if x < 0 || y < 0 || x >= px8::SCREEN_WIDTH as i32 || y >= px8::SCREEN_HEIGHT as i32 {
+            return;
+        }
+
         self.back_buffer[Screen::pixel_offset(x, y)] = col as u8;
     }
 
@@ -529,8 +448,18 @@ impl Screen {
         }
     }
 
+    pub fn font(&mut self, name: &str) {
+        self.font = match name {
+            "pico8" => &fonts::pico8::FONT,
+            "bbc" => &fonts::bbc::FONT,
+            "cbmII" => &fonts::cbmii::FONT,
+            "appleII" => &fonts::appleii::FONT,
+            _ => &fonts::pico8::FONT,
+        }
+    }
+
     pub fn putpixel(&mut self, x: i32, y: i32, col: u32) {
-        return self.putpixel_(x, y, col);
+        self.putpixel_(x, y, col);
     }
 
     pub fn getpixel(&mut self, x: usize, y: usize) -> u32 {
@@ -541,12 +470,11 @@ impl Screen {
             return 0;
         }
 
-        return self.back_buffer[x + y * px8::SCREEN_WIDTH] as u32;
+        self.back_buffer[x + y * px8::SCREEN_WIDTH] as u32
     }
 
     pub fn pget(&mut self, x: u32, y: u32) -> u32 {
-        let col = self.getpixel(x as usize, y as usize);
-        return col;
+        self.getpixel(x as usize, y as usize)
     }
 
     pub fn pset(&mut self, x: i32, y: i32, col: i32) {
@@ -557,14 +485,14 @@ impl Screen {
     pub fn sget(&mut self, x: u32, y: u32) -> u8 {
         let idx_sprite = (x / 8) + 16 * (y / 8);
         let sprite = &self.sprites[idx_sprite as usize];
-        return *sprite.data.get(((x % 8) + (y % 8) * 8) as usize).unwrap();
+        sprite.data[((x % 8) + (y % 8) * 8) as usize]
     }
 
     pub fn sset(&mut self, x: u32, y: u32, col: i32) {
         let col = self._find_color(col);
 
         let idx_sprite = (x / 8) + 16 * (y / 8);
-        let ref mut sprite = self.sprites[idx_sprite as usize];
+        let sprite = &mut self.sprites[idx_sprite as usize];
         sprite.set_data(((x % 8) + (y % 8) * 8) as usize, col as u8);
     }
 
@@ -610,41 +538,33 @@ impl Screen {
 
     pub fn _print(&mut self, string: String, x: i32, y: i32, col: i32, force: bool) {
         let mut x = x;
-        let y = y;
+        let y = y + self.font.top_bearing;
 
-        for k in 0..string.len() {
-            let value = string.as_bytes()[k] as usize;
-            let data;
+        for c in string.as_bytes() {
+            let glyph_index = if (*c < 32) || (*c > 126) { 0 } else { *c - 32 } as u32;
 
-            if value >= 32 && value <= 126 {
-                data = GLYPH[value - 32];
-            } else {
-                /* Unknown char, replace by a space */
-                data = [0x0000, 0x0000];
-            }
+            let glyph_start = (glyph_index * (self.font.glyph_height as u32)) as usize;
+            let glyph_end = glyph_start + (self.font.glyph_height as usize);
 
-            let mut idx = 1;
-            let mut idx_1 = 0;
+            let glyph_data = &self.font.glyph_data[glyph_start..glyph_end];
 
-            for i in 0..32 {
-                if (data[idx] & (0x1 << idx_1)) != 0 {
-                    if force {
-                        self.putpixel_direct(x, y + i % 8, col as u32);
-                    } else {
-                        self.pset(x, y + i % 8, col);
+            for (i, glyph_row) in glyph_data.iter().enumerate() {
+                let mut dx = self.font.left_bearing;
+                let mut row = *glyph_row;
+                while row != 0 {
+                    if row & 0x80 != 0 {
+                        if force {
+                            self.putpixel_direct(x + dx, y + (i as i32), col as u32);
+                        } else {
+                            self.pset(x + dx, y + (i as i32), col);
+                        }
                     }
-                }
-
-                idx_1 += 1;
-
-                if i % 8 == 7 {
-                    x = x + 1;
-                }
-                if i == 15 {
-                    idx = 0;
-                    idx_1 = 0;
+                    row <<= 1;
+                    dx += 1;
                 }
             }
+
+            x += self.font.advance_width;
         }
     }
 
@@ -659,7 +579,7 @@ impl Screen {
         let dx = (x1 - x0).abs();
 
         let sx = if x0 < x1 { 1 } else { -1 };
-        let dy: i32 = -1 * (y1 - y0).abs();
+        let dy: i32 = -((y1 - y0).abs());
         let sy: i32 = if y0 < y1 { 1 } else { -1 };
         let mut err: i32 = dx + dy; /* error value e_xy */
 
@@ -835,8 +755,8 @@ impl Screen {
                     oj = j;
                 }
 
-                ix = ix + iy / rx;
-                iy = iy - ix / rx;
+                ix += iy / rx;
+                iy -= ix / rx;
             }
         } else {
             ix = 0;
@@ -884,8 +804,8 @@ impl Screen {
                     oh = h;
                 }
 
-                ix = ix + iy / ry;
-                iy = iy - ix / ry;
+                ix += iy / ry;
+                iy -= ix / ry;
             }
         }
     }
@@ -956,8 +876,8 @@ impl Screen {
                     oj = j;
                 }
 
-                ix = ix + iy / rx;
-                iy = iy - ix / rx;
+                ix += iy / rx;
+                iy -= ix / rx;
             }
         } else {
             ix = 0;
@@ -995,8 +915,8 @@ impl Screen {
                     oh = h;
                 }
 
-                ix = ix + iy / ry;
-                iy = iy - ix / ry;
+                ix += iy / ry;
+                iy -= ix / ry;
             }
         }
     }
@@ -1033,11 +953,7 @@ impl Screen {
             idx += 1;
         }
 
-        self.line(*vx.get(idx).unwrap(),
-                  *vy.get(idx).unwrap(),
-                  *vx.get(0).unwrap(),
-                  *vy.get(0).unwrap(),
-                  col);
+        self.line(vx[idx], vy[idx], vx[0], vy[0], col);
     }
 
     pub fn spr(&mut self, n: u32, x: i32, y: i32, w: u32, h: u32, flip_x: bool, flip_y: bool) {
@@ -1084,13 +1000,13 @@ impl Screen {
                         self.putpixel_(new_x, new_y, *c as u32);
                     }
 
-                    index = index + 1;
+                    index += 1;
 
                     if index != 0 && index % 8 == 0 {
-                        new_y = new_y + 1;
+                        new_y += 1;
                         new_x = orig_x;
                     } else {
-                        new_x = new_x + 1;
+                        new_x += 1;
                     }
                 }
 
@@ -1138,9 +1054,9 @@ impl Screen {
         let mut v: Vec<u32> = Vec::new();
 
         while idx < data.len() {
-            let r = *data.get(idx).unwrap();
-            let g = *data.get(idx + 1).unwrap();
-            let b = *data.get(idx + 2).unwrap();
+            let r = data[idx];
+            let g = data[idx + 1];
+            let b = data[idx + 2];
 
             v.push(px8::PALETTE.lock().unwrap().add_color(r, g, b));
 
@@ -1202,7 +1118,7 @@ impl Screen {
 
                 // Skip the sprite 0
                 if idx_sprite != 0 {
-                    let mut sprite = self.sprites[idx_sprite as usize].clone();
+                    let sprite = self.sprites[idx_sprite as usize].clone();
                     debug!("GET SPRITE {:?}, {:?} {:?}", idx_sprite, map_x, map_y);
 
                     // not the correct layer
@@ -1214,13 +1130,13 @@ impl Screen {
                                 self.putpixel_(new_x, new_y, *c as u32);
                             }
 
-                            index = index + 1;
+                            index += 1;
 
                             if index > 0 && index % 8 == 0 {
-                                new_y = new_y + 1;
+                                new_y += 1;
                                 new_x = orig_x;
                             } else {
-                                new_x = new_x + 1;
+                                new_x += 1;
                             }
                         }
                     }
@@ -1244,9 +1160,7 @@ impl Screen {
             return 0;
         }
 
-        let value = self.map[x as usize][y as usize];
-
-        return value;
+        self.map[x as usize][y as usize]
     }
 
     pub fn mset(&mut self, x: i32, y: i32, v: u32) {
@@ -1325,8 +1239,7 @@ impl Screen {
             for j in 0..w2 {
                 x2 = (j * x_ratio) >> 16;
                 y2 = (i * y_ratio) >> 16;
-                ret.insert((i * w2 + j) as usize,
-                           *v.get((y2 * w1 + x2) as usize).unwrap());
+                ret.insert((i * w2 + j) as usize, v[(y2 * w1 + x2) as usize]);
             }
         }
 
@@ -1335,9 +1248,7 @@ impl Screen {
         if flip_x {
             for i in 0..w2 / 2 {
                 for j in 0..h2 {
-                    let tmp = ret[(i + j * w2) as usize];
-                    ret[(i + j * w2) as usize] = ret[((w2 - (i + 1)) + j * w2) as usize];
-                    ret[((w2 - (i + 1)) + j * w2) as usize] = tmp;
+                    ret.swap((i + j * w2) as usize, ((w2 - (i + 1)) + j * w2) as usize);
                 }
             }
         }
@@ -1345,9 +1256,7 @@ impl Screen {
         if flip_y {
             for i in 0..h2 / 2 {
                 for j in 0..w2 {
-                    let tmp = ret[(j + i * w2) as usize];
-                    ret[(j + i * w2) as usize] = ret[(j + (h2 - (i + 1)) * w2) as usize];
-                    ret[(j + (h2 - (i + 1)) * w2) as usize] = tmp;
+                    ret.swap((j + i * w2) as usize, (j + (h2 - (i + 1)) * w2) as usize);
                 }
             }
         }
@@ -1355,7 +1264,7 @@ impl Screen {
         let mut idx = 0;
         for j in 0..h2 {
             for i in 0..w2 {
-                let d: u8 = *ret.get(idx).unwrap();
+                let d: u8 = ret[idx];
                 idx += 1;
                 if d != 0 {
                     if !self.is_transparent(d as u32) {
@@ -1366,7 +1275,7 @@ impl Screen {
         }
     }
 
-    pub fn is_transparent(&mut self, value: u32) -> bool {
+    pub fn is_transparent(&self, value: u32) -> bool {
         if value <= 255 {
             self.transparency_map[value as usize]
         } else {
@@ -1385,10 +1294,8 @@ impl Screen {
     pub fn palt(&mut self, c: i32, t: bool) {
         if c == -1 {
             self._reset_transparency();
-        } else {
-            if (c >= 0) && (c <= 255) {
-                self.transparency_map[c as usize] = t;
-            }
+        } else if (c >= 0) && (c <= 255) {
+            self.transparency_map[c as usize] = t;
         }
     }
 

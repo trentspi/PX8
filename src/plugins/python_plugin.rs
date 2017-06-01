@@ -11,6 +11,7 @@ pub mod plugin {
     use px8::info::Info;
     use px8::Palettes;
     use px8::noise::Noise;
+    use px8::PX8Config;
     use gfx::Screen;
     use sound::sound::Sound;
 
@@ -49,7 +50,7 @@ pub mod plugin {
     }
 
     def switch_palette(&self, name: String) -> PyResult<i32> {
-        self.palettes(py).lock().unwrap().switch_to(name);
+        self.palettes(py).lock().unwrap().switch_to(&name);
         Ok(0)
     }
 
@@ -107,6 +108,11 @@ pub mod plugin {
 
     def fget_all(&self, idx: u32) -> PyResult<u8> {
         Ok(self.screen(py).lock().unwrap().fget_all(idx))
+    }
+
+    def font(&self, name: String) -> PyResult<i32> {
+        self.screen(py).lock().unwrap().font(&name);
+        Ok(0)
     }
 
     def fset(&self, idx: u32, flag: u8, value: bool) -> PyResult<i32> {
@@ -343,6 +349,12 @@ pub mod plugin {
     // Others
     py_class!(class PX8Sys |py| {
     data info: Arc < Mutex <Info > >;
+    data config: Arc<Mutex<PX8Config>>;
+
+        def show_mouse(&self, value: bool) -> PyResult<u32> {
+            self.config(py).lock().unwrap().show_mouse(value);
+            Ok(0)
+        }
 
         def time(&self) -> PyResult<f64> {
             Ok(self.info(py).lock().unwrap().elapsed_time)
@@ -375,7 +387,8 @@ pub mod plugin {
                     info: Arc<Mutex<Info>>,
                     screen: Arc<Mutex<Screen>>,
                     sound: Arc<Mutex<Sound>>,
-                    noise: Arc<Mutex<Noise>>) {
+                    noise: Arc<Mutex<Noise>>,
+                    config: Arc<Mutex<PX8Config>>) {
             info!("[PLUGIN][PYTHON] Init plugin");
 
             let gil = Python::acquire_gil();
@@ -404,7 +417,7 @@ pub mod plugin {
             let px8_map_obj = PX8Map::create_instance(py, screen.clone()).unwrap();
             self.mydict.set_item(py, "px8_map", px8_map_obj).unwrap();
 
-            let px8_sys_obj = PX8Sys::create_instance(py, info.clone()).unwrap();
+            let px8_sys_obj = PX8Sys::create_instance(py, info.clone(), config.clone()).unwrap();
             self.mydict.set_item(py, "px8_sys", px8_sys_obj).unwrap();
 
             let px8_mem_obj = PX8Memory::create_instance(py, screen.clone()).unwrap();
@@ -578,6 +591,7 @@ pub mod plugin {
     use px8::Palettes;
     use sound::sound::Sound;
     use px8::noise::Noise;
+    use px8::PX8Config;
 
     pub struct PythonPlugin {}
 
@@ -593,15 +607,16 @@ pub mod plugin {
                     info: Arc<Mutex<Info>>,
                     screen: Arc<Mutex<Screen>>,
                     sound: Arc<Mutex<Sound>>,
-                    noise: Arc<Mutex<Noise>>) {
+                    noise: Arc<Mutex<Noise>>,
+                    config: Arc<Mutex<PX8Config>>) {
             panic!("[PLUGIN][PYTHON] plugin disabled");
         }
         pub fn init(&mut self) {}
         pub fn draw(&mut self) -> bool {
-            return false;
+            false
         }
         pub fn update(&mut self) -> bool {
-            return false;
+            false
         }
         pub fn load_code(&mut self, data: String) -> bool {
             false

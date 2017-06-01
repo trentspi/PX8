@@ -50,6 +50,9 @@ def fget(idx_sprite, flag=-1):
         px8_graphic.fget_all(idx_sprite)
     return px8_graphic.fget(idx_sprite, flag)
 
+def font(name = "pico8"):
+    px8_graphic.font(name)
+
 def fset(idx_sprite, flag, value=-1):
     if value == -1:
         px8_graphic.fset_all(flag)
@@ -257,8 +260,11 @@ globals()["noise_set_seed"] = noise_set_seed
 def px8_time():
     return px8_sys.time()
 
+def show_mouse(value=True):
+    px8_sys.show_mouse(value)
 
 globals()["px8_time"] = px8_time
+globals()["show_mouse"] = show_mouse
 
 
 ########################### External functions ###########################
