@@ -4,7 +4,6 @@ pub mod frametimes;
 use time;
 
 use sdl2;
-use std::sync::{Arc, Mutex};
 use sdl2::Sdl;
 use sdl2::EventPump;
 use std::time::Duration;
@@ -18,7 +17,6 @@ use sdl2::controller::Axis;
 use sdl2::keyboard::Keycode;
 
 use renderer;
-use sound;
 use px8;
 use config::keys::{map_axis, map_button, map_button_joystick, map_axis_joystick};
 use config::controllers;
@@ -62,7 +60,6 @@ pub struct Frontend {
     controllers: controllers::Controllers,
     times: frametimes::FrameTimes,
     pub px8: px8::PX8,
-    pub sound_interface: Arc<Mutex<sound::sound::SoundInterface<f32>>>,
     start_time: time::Tm,
     elapsed_time: f64,
     scale: Scale,
@@ -84,17 +81,15 @@ impl Frontend {
         info!("[Frontend] SDL2 event pump");
         let event_pump = try!(sdl_context.event_pump());
 
-        info!("[Frontend] creating renderer");
-        let renderer = renderer::renderer::Renderer::new(sdl_video, fullscreen, opengl, scale)
-            .unwrap();
+        let px8 = px8::PX8::new();
 
-        info!("[Frontend] SDL2 audio");
-        let mut sound_interface =
-            sound::sound::SoundInterface::new(sdl_context.clone(), 44100, 1024, 1);
-        sound_interface.start();
+        let renderer = {
+            let mut screen = &mut px8.screen.lock().unwrap();
 
-        let sound = sound::sound::Sound::new(sound_interface.data_sender.clone());
-
+            info!("[Frontend] creating renderer");
+            renderer::renderer::Renderer::new(sdl_video, screen, fullscreen, opengl, scale).unwrap()
+        };
+                  
         info!("[Frontend] Disable mouse cursor ? {:?}", show_mouse);
 
         sdl_context.mouse().show_cursor(show_mouse);
@@ -103,10 +98,9 @@ impl Frontend {
                sdl: sdl_context,
                event_pump: event_pump,
                renderer: renderer,
-               sound_interface: Arc::new(Mutex::new(sound_interface)),
                controllers: controllers::Controllers::new(),
                times: frametimes::FrameTimes::new(Duration::from_secs(1) / 60),
-               px8: px8::PX8::new(Arc::new(Mutex::new(sound)).clone()),
+               px8: px8,
                start_time: time::now(),
                elapsed_time: 0.,
                scale: scale,
@@ -254,17 +248,21 @@ impl Frontend {
 
             self.px8.fps = self.fps_counter.get_fps();
 
+
             let mouse_state = self.event_pump.mouse_state();
 
-            let (mouse_viewport_x, mouse_viewport_y) =
+            let (mouse_viewport_x, mouse_viewport_y) = {
+                let screen = &self.px8.screen.lock().unwrap();
                 self.renderer
-                    .window_coords_to_viewport_coords(mouse_state.x(), mouse_state.y());
+                    .window_coords_to_viewport_coords(screen, mouse_state.x(), mouse_state.y())
+            };
 
             self.px8
                 .players
                 .lock()
                 .unwrap()
                 .set_mouse_x(mouse_viewport_x);
+
             self.px8
                 .players
                 .lock()
@@ -272,13 +270,15 @@ impl Frontend {
                 .set_mouse_y(mouse_viewport_y);
 
             for event in self.event_pump.poll_iter() {
+
                 match event {
                     Event::Quit { .. } => break 'main,
                     Event::KeyDown { keycode: Some(keycode), .. } if keycode == Keycode::Escape => {
                         break 'main
                     }
                     Event::Window { win_event: WindowEvent::SizeChanged(_, _), .. } => {
-                        self.renderer.update_dimensions();
+                        self.renderer
+                            .update_viewport(&self.px8.screen.lock().unwrap());
                     }
                     Event::MouseButtonDown { mouse_btn, .. } => {
                         self.px8
@@ -468,6 +468,7 @@ impl Frontend {
             self.px8.draw();
 
             self.update_time();
+
             self.blit();
         }
     }
@@ -483,9 +484,11 @@ impl Frontend {
 
             let mouse_state = self.event_pump.mouse_state();
 
-            let (mouse_viewport_x, mouse_viewport_y) =
+            let (mouse_viewport_x, mouse_viewport_y) = {
+                let screen = &px8.screen.lock().unwrap();
                 self.renderer
-                    .window_coords_to_viewport_coords(mouse_state.x(), mouse_state.y());
+                    .window_coords_to_viewport_coords(screen, mouse_state.x(), mouse_state.y())
+            };
 
             self.px8
                 .players
@@ -497,6 +500,11 @@ impl Frontend {
                 .lock()
                 .unwrap()
                 .set_mouse_y(mouse_viewport_y);
+            self.px8
+                .players
+                .lock()
+                .unwrap()
+                .set_mouse_state(mouse_state);
 
             for event in self.event_pump.poll_iter() {
                 match event {
@@ -505,7 +513,8 @@ impl Frontend {
                         break
                     }
                     Event::Window { win_event: WindowEvent::SizeChanged(_, _), .. } => {
-                        self.renderer.update_dimensions();
+                        self.renderer
+                            .update_viewport(&self.px8.screen.lock().unwrap());
                     }
                     Event::MouseButtonDown { mouse_btn, .. } => {
                         self.px8
@@ -700,7 +709,7 @@ impl Frontend {
     }
 
     pub fn blit(&mut self) {
-        self.renderer.blit(self.px8.screen.clone());
+        self.renderer.blit(&mut self.px8.screen.lock().unwrap());
         self.times.limit();
     }
 }
