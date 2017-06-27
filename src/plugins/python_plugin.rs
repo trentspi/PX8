@@ -19,19 +19,75 @@ pub mod plugin {
     py_class!(class PX8Audio |py| {
     data sound: Arc<Mutex<Sound>>;
 
-    def sound_load(&self, filename: String) -> PyResult<i32> {
+    // Music
+    def music_load(&self, filename: String) -> PyResult<i32> {
         Ok(self.sound(py).lock().unwrap().load(filename))
     }
 
-    def sound_play(&self, id: u32) -> PyResult<i32> {
-        self.sound(py).lock().unwrap().play(id);
+    def music_play(&self, filename: String, loops: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().play(filename, loops);
         Ok(0)
     }
 
-    def sound_stop(&self, id: u32) -> PyResult<i32> {
-        self.sound(py).lock().unwrap().stop(id);
+    def music_stop(&self) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().stop();
         Ok(0)
     }
+
+    def music_pause(&self) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().pause();
+        Ok(0)
+    }
+
+    def music_resume(&self) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().resume();
+        Ok(0)
+    }
+
+    def music_rewind(&self) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().rewind();
+        Ok(0)
+    }
+
+    def music_volume(&self, volume: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().volume(volume);
+        Ok(0)
+    }
+
+    // Sound
+    def sound_load(&self, filename: String) -> PyResult<i32> {
+        Ok(self.sound(py).lock().unwrap().load_sound(filename))
+    }
+
+    def sound_play(&self, filename: String, loops: i32, channel: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().play_sound(filename, loops, channel);
+        Ok(0)
+    }
+
+    def sound_pause(&self, channel: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().pause_sound(channel);
+        Ok(0)
+    }
+
+    def sound_resume(&self, channel: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().resume_sound(channel);
+        Ok(0)
+    }
+
+    def sound_stop(&self, channel: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().stop_sound(channel);
+        Ok(0)
+    }
+
+    def sound_volume(&self, volume: i32, channel: i32) -> PyResult<i32> {
+        self.sound(py).lock().unwrap().volume_sound(volume, channel);
+        Ok(0)
+    }
+
+    def sound_isplaying(&self, channel: i32) -> PyResult<bool> {
+        Ok(self.sound(py).lock().unwrap().isplaying_sound(channel))
+    }
+
 
     });
 

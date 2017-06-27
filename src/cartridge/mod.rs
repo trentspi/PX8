@@ -408,7 +408,13 @@ impl fmt::Debug for CartridgeGFX {
 
 impl CartridgeGFX {
     pub fn empty() -> CartridgeGFX {
-        CartridgeGFX { sprites: Vec::new() }
+        // Fill with empty sprites
+        let mut sprites:Vec<Sprite> = Vec::new();
+        for i in 0..128 {
+            sprites.push(Sprite::new([0; 64]));
+        }
+
+        CartridgeGFX { sprites: sprites }
     }
 
     pub fn new(lines: &[String]) -> CartridgeGFX {
@@ -926,7 +932,10 @@ impl Cartridge {
     }
 
     #[allow(dead_code)]
-    pub fn parse_raw<R: io::BufRead>(filename: &str, buf: &mut R, code: bool) -> Result<Cartridge, Error> {
+    pub fn parse_raw<R: io::BufRead>(filename: &str,
+                                     buf: &mut R,
+                                     code: bool)
+                                     -> Result<Cartridge, Error> {
         let mut header = String::new();
         let mut version = String::new();
 
