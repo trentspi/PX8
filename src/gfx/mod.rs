@@ -509,7 +509,7 @@ impl Screen {
     }
 
     pub fn line(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, col: i32) {
-        debug!("LINE {:?} {:?} {:?} {:?} {:?}", x0, y0, x1, y1, col);
+        // debug!("LINE {:?} {:?} {:?} {:?} {:?}", x0, y0, x1, y1, col);
 
         let color = self._find_color(col);
 
@@ -903,22 +903,23 @@ impl Screen {
     }
 
     pub fn spr(&mut self, n: u32, x: i32, y: i32, w: u32, h: u32, flip_x: bool, flip_y: bool) {
-        debug!("PRINT SPRITE = x:{:?} y:{:?} n:{:?} w:{:?} h:{:?} flip_x:{:?} flip_y:{:?}",
+        /* debug!("PRINT SPRITE = x:{:?} y:{:?} n:{:?} w:{:?} h:{:?} flip_x:{:?} flip_y:{:?}",
                x,
                y,
                n,
                w,
                h,
                flip_x,
-               flip_y);
+               flip_y);*/
 
         let mut orig_x = x;
         let mut orig_y = y;
 
+        let sprites_len = self.sprites.len();
         for i in 0..h {
             for j in 0..w {
                 let sprite_offset = ((j + n) + i * 16) as usize;
-                if sprite_offset >= self.sprites.len() {
+                if sprite_offset >= sprites_len {
                     break;
                 }
 
@@ -934,11 +935,11 @@ impl Screen {
                 let mut new_x = orig_x;
                 let mut new_y = orig_y;
 
-                debug!("SPRITE = {:?} x:{:?} y:{:?} {:?}",
+                /*                debug!("SPRITE = {:?} x:{:?} y:{:?} {:?}",
                        sprite_offset,
                        new_x,
                        new_y,
-                       sprite);
+                       sprite);*/
 
                 let mut index = 0;
                 for c in &sprite.data {
@@ -984,14 +985,14 @@ impl Screen {
             cel_h = px8::MAP_HEIGHT as u32;
         }
 
-        debug!("MAP cel_x {:?} cel_y {:?} sx {:?} sy {:?} cel_w {:?} cel_h {:?} layer {:?}",
+        /*debug!("MAP cel_x {:?} cel_y {:?} sx {:?} sy {:?} cel_w {:?} cel_h {:?} layer {:?}",
                cel_x,
                cel_y,
                sx,
                sy,
                cel_w,
                cel_h,
-               layer);
+               layer);*/
 
         while idx_y < cel_h as i32 {
             idx_x = 0;
@@ -1004,7 +1005,7 @@ impl Screen {
                 let map_x = cel_x as i32 + idx_x;
                 let map_y = cel_y as i32 + idx_y;
 
-                debug!("MAP X {:?} MAP Y {:?}", map_x, map_y);
+                //debug!("MAP X {:?} MAP Y {:?}", map_x, map_y);
 
                 let idx_sprite = self.map[(map_x as usize) % px8::MAP_WIDTH][(map_y as usize) %
                 px8::MAP_HEIGHT];
@@ -1012,7 +1013,7 @@ impl Screen {
                 // Skip the sprite 0
                 if idx_sprite != 0 {
                     let sprite = self.sprites[idx_sprite as usize].clone();
-                    debug!("GET SPRITE {:?}, {:?} {:?}", idx_sprite, map_x, map_y);
+                    //debug!("GET SPRITE {:?}, {:?} {:?}", idx_sprite, map_x, map_y);
 
                     // not the correct layer
                     if layer == 0 || sprite.is_bit_flags_set(layer) {
@@ -1043,7 +1044,7 @@ impl Screen {
     }
 
     pub fn mget(&mut self, x: i32, y: i32) -> u32 {
-        debug!("MGET x {:?} y {:?}", x, y);
+        //debug!("MGET x {:?} y {:?}", x, y);
 
         if x < 0 || y < 0 {
             return 0;
@@ -1057,7 +1058,7 @@ impl Screen {
     }
 
     pub fn mset(&mut self, x: i32, y: i32, v: u32) {
-        debug!("MSET x {:?} y {:?} v {:?}", x, y, v);
+        //debug!("MSET x {:?} y {:?} v {:?}", x, y, v);
 
         if x < 0 || y < 0 {
             return;
@@ -1081,7 +1082,7 @@ impl Screen {
                 dh: u32,
                 flip_x: bool,
                 flip_y: bool) {
-        debug!("SSPR sx {:?} sy {:?} sw {:?} sh {:?} dx {:?} dy {:?} dw {:?} dh {:?} flip_x {:?} flip_y {:?}",
+        /*debug!("SSPR sx {:?} sy {:?} sw {:?} sh {:?} dx {:?} dy {:?} dw {:?} dh {:?} flip_x {:?} flip_y {:?}",
                sx,
                sy,
                sw,
@@ -1091,7 +1092,7 @@ impl Screen {
                dw,
                dh,
                flip_x,
-               flip_y);
+               flip_y);*/
 
         let mut v = Vec::new();
 
@@ -1101,7 +1102,7 @@ impl Screen {
             }
         }
 
-        debug!("SSPR V {:?} {:?}", v.len(), v);
+        //debug!("SSPR V {:?} {:?}", v.len(), v);
 
         let mut x2;
         let mut y2;
@@ -1120,13 +1121,13 @@ impl Screen {
         x_ratio = ((w1 << 16) / w2) + 1;
         y_ratio = ((h1 << 16) / h2) + 1;
 
-        debug!("SSPR H1 {:?} W1 {:?} H2 {:?} W2 {:?} X RATIO {:?} Y RATIO {:?}",
+        /*debug!("SSPR H1 {:?} W1 {:?} H2 {:?} W2 {:?} X RATIO {:?} Y RATIO {:?}",
                h1,
                w1,
                h2,
                w2,
                x_ratio,
-               y_ratio);
+               y_ratio);*/
 
         for i in 0..h2 {
             for j in 0..w2 {
@@ -1136,7 +1137,7 @@ impl Screen {
             }
         }
 
-        debug!("SSPR OUTPUT RET {:?} {:?}", ret.len(), ret);
+        //debug!("SSPR OUTPUT RET {:?} {:?}", ret.len(), ret);
 
         if flip_x {
             for i in 0..w2 / 2 {
