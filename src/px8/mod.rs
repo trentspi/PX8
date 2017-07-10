@@ -703,6 +703,8 @@ impl PX8 {
     pub fn reset(&mut self) {
         info!("[PX8] Reset");
 
+        self.screen.lock().unwrap().mode(128, 128, 1.);
+
         self.configuration.lock().unwrap().toggle_mouse(false);
 
         self.palettes.lock().unwrap().init();
@@ -973,11 +975,15 @@ impl PX8 {
         let cartridge = &mut self.cartridges[self.current_cartridge].cartridge;
 
         let output_filename = &cartridge.filename.clone();
-        info!("[PX8] Saving the current cartridge in {:?}",
+        info!("[PX8][SAVE] Saving the current cartridge in {:?}",
               output_filename);
 
+        info!("[PX8][SAVE] Set the new sprites");
         cartridge.gfx.set_sprites(screen.sprites.clone());
+        info!("[PX8][SAVE] Set the new map");
         cartridge.map.set_map(screen.map);
+        info!("[PX8][SAVE] Set the new flags");
+        cartridge.gff.set_flags(screen.sprites.clone());
 
         match cartridge.format {
             CartridgeFormat::P8Format => {
@@ -1095,7 +1101,7 @@ impl PX8 {
                 .set_map(cartridge.cartridge.map.map);
 
             if editor {
-                self.editor.init(self.configuration.clone());
+                self.editor.init(self.configuration.clone(), &mut self.screen.lock().unwrap());
                 self.state = PX8State::EDITOR;
             } else {
                 self.state = PX8State::RUN;
@@ -1222,7 +1228,7 @@ impl PX8 {
             self.state = PX8State::RUN;
             self.reset();
         } else {
-            self.editor.init(self.configuration.clone());
+            self.editor.init(self.configuration.clone(), &mut self.screen.lock().unwrap());
             self.editing = true;
             self.state = PX8State::EDITOR;
         }
