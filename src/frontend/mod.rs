@@ -324,8 +324,10 @@ impl Frontend {
                             self.px8.init();
                         } else if keycode == Keycode::F7 {
                             self.px8.next_palette();
+                        } else if keycode == Keycode::F8 {
+//                            self.px8.next_resolution();
                         }
-
+ 
                         if self.px8.players.lock().unwrap().get_value_quick(0, 7) == 1 {
                             self.px8.switch_pause();
                         }
@@ -551,7 +553,7 @@ impl Frontend {
                                                     &dt.format("%Y-%m-%d-%H-%M-%S.gif")
                                                          .to_string()));
                             } else {
-                                self.px8.stop_record(self.scale.factor());
+                                self.px8.stop_record();
                             }
                         } else if keycode == Keycode::F5 {
                             self.px8.save_current_cartridge();

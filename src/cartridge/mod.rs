@@ -81,17 +81,6 @@ impl CartridgeLua {
             let mut line = line.to_string();
 
             if pico8_support {
-                //  lua = lua:gsub("(%S+)%s*([%+-%*/%%])=","%1 = %1 %2 ")
-                let re = Regex::new(r"(?P<X>\S+)\s*(?P<Z>[\+\*%/-])=").unwrap();
-                if re.is_match(&line) {
-                    let line_clone = line.clone();
-                    let after = re.replace_all(&line_clone, "$X = $X $Z $Y");
-                    debug!("MODIFY {:?} \t=> {:?}", line_clone, after);
-
-                    line.clear();
-                    line.push_str(&after);
-                }
-
                 let re = Regex::new(r"!=").unwrap();
                 if re.is_match(&line) {
                     let line_clone = line.clone();
@@ -135,35 +124,9 @@ impl CartridgeLua {
                 let re = Regex::new(r"if\(_update60").unwrap();
                 if re.is_match(&line) {
                     debug!("REMOVE update60");
-
+                    
                     line.clear();
                 }
-
-                //  lua = lua:gsub('if%s*(%b())%s*([^\n]*)\n',function(a,b)
-
-                //		local nl = a:find('\n')
-                //local th = b:find('%f[%w]then%f[%W]')
-                //local an = b:find('%f[%w]and%f[%W]')
-                //local o = b:find('%f[%w]or%f[%W]')
-                //if nl or th or an or o then
-                //return string.format('if %s %s\n',a,b)
-                //else
-                //return "if "..a:sub(2,#a-1).." then "..b.." end\n"
-                //end
-
-                /*let re = Regex::new(r"if\s*\((?P<X>.*)\)(?P<Y>[^\n]*)").unwrap();
-            if re.is_match(&line) {
-                let re_then = Regex::new(r"then").unwrap();
-                if !re_then.is_match(&line) {
-                    println!("MATCH {:?}", line);
-                    let after = re.replace_all(&line, "if $X then $Y end\n");
-                    println!("\t=> {:?}", after);
-
-
-                    line.clear();
-                    line.push_str(&after);
-                }
-            }*/
             }
 
             line.push('\n');
@@ -466,6 +429,13 @@ impl CartridgeGFX {
             }
         }
 
+        // Fill with empty sprites
+        if sprites.len() == 0 {
+            for i in 0..128 {
+                sprites.push(Sprite::new([0; 64]));
+            }
+        }
+
         CartridgeGFX { sprites: sprites }
     }
 
@@ -524,7 +494,7 @@ impl CartridgeGFX {
             }
 
             for idx in idx_sprites..idx_sprites + 16 {
-                let gfx_sprites = self.sprites[idx].clone();
+                let mut gfx_sprites = self.sprites[idx].clone();
 
                 data.push_str(&gfx_sprites.get_line(line));
             }
@@ -1193,8 +1163,7 @@ impl Cartridge {
         self.code.mode = mode;
     }
 
-
-    pub fn save_in_p8(&mut self, filename: &str) {
+    pub fn save_in_p8(&mut self, filename: &str, version: &str) {
         info!("Save the modified cartridge in P8 format {:?}", filename);
 
         let mut f = File::create(filename).unwrap();
@@ -1206,7 +1175,8 @@ impl Cartridge {
             }
             _ => {
                 f.write_all(b"Saved by PX8\n").unwrap();
-                f.write_all(b"Version 0.0.4\n").unwrap();
+                f.write_all(format!("Version {:?}\n", version).as_bytes())
+                    .unwrap();
             }
         }
 

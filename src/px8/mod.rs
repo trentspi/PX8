@@ -159,11 +159,17 @@ pub fn draw_logo(screen: &mut gfx::Screen) {
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0 ];
 
-    screen
-        .print("Powered by PX8".to_string(), 64, 112, 7);
+    let width = screen.width;
+    let height = screen.height;
 
-    let idx_x = 114;
-    let idx_y = 120;
+    screen
+        .print(format!("Powered by PX8 {:?}.{:?}.{:?}", VERSION, MAJOR_VERSION, MINOR_VERSION).to_string(),
+        (width/3) as i32,
+        (height-16) as i32,
+        7);
+
+    let idx_x = (width - 14) as i32;
+    let idx_y = (height - 8) as i32;
 
     let mut x = 0;
     let mut y = 0;
@@ -234,8 +240,22 @@ impl Menu {
             .to_string()
     }
 
+    pub fn get_current_filename(&mut self) -> String {
+        if self.cartridges.len() > 0 {
+            return self.cartridges[self.idx as usize]
+                       .as_path()
+                       .to_str()
+                       .unwrap()
+                       .to_string();
+        }
+
+        "".to_string()
+    }
+
     pub fn draw(&mut self, screen: &mut gfx::Screen) {
         screen.cls();
+
+        screen.mode(128, 128, 1.);
 
         if self.cartridges.len() > 0 {
             let mut filename = self.cartridges[self.idx as usize]
@@ -637,6 +657,9 @@ pub struct PX8 {
     pub draw_return: bool,
     pub update_return: bool,
     pub mouse_spr: Vec<u8>,
+    pub version: u32,
+    pub major_version: u32,
+    pub minor_version: u32,
 }
 
 impl PX8 {
@@ -671,6 +694,9 @@ impl PX8 {
             draw_return: true,
             update_return: true,
             mouse_spr: PX8::mouse_sprite(),
+            version: VERSION,
+            major_version: MAJOR_VERSION,
+            minor_version: MINOR_VERSION,
         }
     }
 
@@ -803,7 +829,9 @@ impl PX8 {
                 self.menu.draw(&mut self.screen.lock().unwrap());
             }
             PX8State::EDITOR => {
-                self.draw_time = self.editor.draw(self.players.clone(), &mut self.screen.lock().unwrap()) * 1000.0;
+                self.draw_time = self.editor
+                    .draw(self.players.clone(), &mut self.screen.lock().unwrap()) *
+                                 1000.0;
             }
         }
 
@@ -818,9 +846,7 @@ impl PX8 {
                         self.screen
                             .lock()
                             .unwrap()
-                            .putpixel_direct(mouse_x + x as i32,
-                                             mouse_y + y as i32,
-                                             pixel as u32);
+                            .putpixel_direct(mouse_x + x as i32, mouse_y + y as i32, pixel as u32);
                     }
                 }
             }
@@ -911,20 +937,17 @@ impl PX8 {
             info!("[PX8] Creating ImageBuffer {:?}", buffer.len());
 
             let image =
-                image::ImageBuffer::from_raw(screen.width as u32, screen.height as u32, buffer)
+                image::ImageBuffer::from_raw(screen.height as u32, screen.width as u32, buffer)
                     .unwrap();
 
             info!("[PX8] Rotating image");
             let image = image::DynamicImage::ImageRgb8(image)
-                .rotate90()
-                .resize((screen.width * scale) as u32,
-                        (screen.height * scale) as u32,
-                        image::FilterType::Nearest)
-                .fliph();
+                .rotate270()
+                .flipv();
 
             info!("[PX8] Creating gif Frame");
-            let mut frame = gif::Frame::from_rgb((screen.width * scale) as u16,
-                                                 (screen.height * scale) as u16,
+            let mut frame = gif::Frame::from_rgb(screen.width as u16,
+                                                 screen.height as u16,
                                                  &image.raw_pixels());
 
             frame.delay = 1;
@@ -935,30 +958,30 @@ impl PX8 {
     }
 
     pub fn screenshot(&mut self, filename: &str) {
-        info!("[PX8] Taking screenshot in {:?}", filename);
-
         let mut screen = &mut self.screen.lock().unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
+        info!("[PX8] Taking screenshot {:?}x{:?} in {:?}", screen.width, screen.height, filename);
 
+        let mut buffer: Vec<u8> = vec![0; (screen.width*screen.height) * 3];
+
+        let mut idx = 0;
         for x in 0..screen.width {
             for y in 0..screen.height {
                 let value = screen.pget(x as u32, y as u32);
                 let rgb_value = PALETTE.lock().unwrap().get_rgb(value);
 
-                buffer.push(rgb_value.r);
-                buffer.push(rgb_value.g);
-                buffer.push(rgb_value.b);
+                buffer[idx] = rgb_value.r;
+                buffer[idx + 1] = rgb_value.g;
+                buffer[idx + 2] = rgb_value.b;
+                
+                idx += 3;
             }
         }
 
-        let image = image::ImageBuffer::from_raw(screen.width as u32, screen.height as u32, buffer)
+        let image = image::ImageBuffer::from_raw(screen.height as u32, screen.width as u32, buffer)
             .unwrap();
         let image = image::DynamicImage::ImageRgb8(image)
             .rotate270()
-            .resize((screen.width * 4) as u32,
-                    (screen.height * 4) as u32,
-                    image::FilterType::Nearest)
             .flipv();
 
         let mut output = File::create(&Path::new(filename)).unwrap();
@@ -967,7 +990,7 @@ impl PX8 {
 
     pub fn save_current_cartridge(&mut self) {
         if !self.editing {
-            return
+            return;
         }
 
         let screen = &self.screen.lock().unwrap();
@@ -987,10 +1010,21 @@ impl PX8 {
 
         match cartridge.format {
             CartridgeFormat::P8Format => {
-                cartridge.save_in_p8(output_filename);
+                cartridge.save_in_p8(output_filename,
+                                     format!("{:?}.{:?}.{:?}",
+                                             self.version,
+                                             self.major_version,
+                                             self.minor_version)
+                                             .as_str());
             }
             CartridgeFormat::PngFormat => {
-                cartridge.save_in_p8(output_filename);
+                cartridge.save_in_p8(output_filename,
+                                     format!("{:?}.{:?}.{:?}",
+                                             self.version,
+                                             self.major_version,
+                                             self.minor_version)
+                                             .as_str());
+
             }
             CartridgeFormat::Px8Format => {
                 cartridge.save_in_dpx8();
@@ -1043,7 +1077,11 @@ impl PX8 {
         self.add_cartridge(px8_cartridge);
     }
 
-    pub fn _load_cartridge(&mut self, cartridge: &mut PX8Cartridge, editor: bool) -> bool {
+    pub fn _load_cartridge(&mut self,
+                           cartridge: &mut PX8Cartridge,
+                           editor: bool,
+                           filename: &str)
+                           -> bool {
         info!("[PX8] Loading cartridge");
 
         let data = cartridge.get_code();
@@ -1062,7 +1100,7 @@ impl PX8 {
                           self.noise.clone(),
                           self.sound.clone());
 
-                ret = cartridge.lua_plugin.load_code(data);
+                ret = cartridge.lua_plugin.load_code(data.clone());
             }
             Code::PYTHON => {
                 info!("[PX8] Loading PYTHON Plugin");
@@ -1077,7 +1115,7 @@ impl PX8 {
                           self.noise.clone(),
                           self.configuration.clone());
 
-                ret = cartridge.python_plugin.load_code(data);
+                ret = cartridge.python_plugin.load_code(data.clone());
             }
             _ => (),
         }
@@ -1101,7 +1139,11 @@ impl PX8 {
                 .set_map(cartridge.cartridge.map.map);
 
             if editor {
-                self.editor.init(self.configuration.clone(), &mut self.screen.lock().unwrap());
+                self.editor
+                    .init(self.configuration.clone(),
+                          &mut self.screen.lock().unwrap(),
+                          String::from(filename),
+                          data.clone());
                 self.state = PX8State::EDITOR;
             } else {
                 self.state = PX8State::RUN;
@@ -1140,7 +1182,7 @@ impl PX8 {
 
         cartridge.set_mode(mode == PX8Mode::PICO8);
         let mut px8_cartridge = PX8Cartridge::new(cartridge);
-        let ret = self._load_cartridge(&mut px8_cartridge, editor);
+        let ret = self._load_cartridge(&mut px8_cartridge, editor, filename);
         if ret {
             self.add_cartridge(px8_cartridge);
             self.init();
@@ -1187,7 +1229,7 @@ impl PX8 {
 
         cartridge.set_mode(mode == PX8Mode::PICO8);
         let mut px8_cartridge = PX8Cartridge::new(cartridge);
-        let ret = self._load_cartridge(&mut px8_cartridge, editor);
+        let ret = self._load_cartridge(&mut px8_cartridge, editor, filename);
         if ret {
             self.add_cartridge(px8_cartridge);
             self.init();
@@ -1228,7 +1270,21 @@ impl PX8 {
             self.state = PX8State::RUN;
             self.reset();
         } else {
-            self.editor.init(self.configuration.clone(), &mut self.screen.lock().unwrap());
+            info!("[PX8] Back to {:?}", self.cartridges.len());
+            if self.cartridges.len() == 0 {
+                let filename = self.menu.get_current_filename().clone();
+                self.load_cartridge(filename.as_str(), false, PX8Mode::PX8);
+            }
+
+            let filename = self.menu.get_current_filename().clone();
+
+            let code = self.cartridges[self.current_cartridge].get_code();
+
+            self.editor
+                .init(self.configuration.clone(),
+                      &mut self.screen.lock().unwrap(),
+                      filename,
+                      code);
             self.editing = true;
             self.state = PX8State::EDITOR;
         }

@@ -1,13 +1,11 @@
-#[cfg(feature = "lua")]
-extern crate lua;
+#[cfg(feature = "px8_plugin_lua")]
+extern crate px8_plugin_lua;
 
 #[cfg(feature = "cpython")]
 #[macro_use]
 extern crate cpython;
 
-#[cfg(feature = "portaudio")]
-#[macro_use]
-extern crate portaudio;
+extern crate dyon;
 
 extern crate sdl2;
 extern crate getopts;
@@ -62,6 +60,8 @@ mod sound;
 
 use gfx::Scale;
 use cartridge::Cartridge;
+
+include!(concat!(env!("OUT_DIR"), "/parameters.rs"));
 
 fn print_usage(program: &str, opts: &Options) {
     let brief = format!("Usage: {} FILE [options]", program);
@@ -189,7 +189,9 @@ fn main() {
                 Ok(mut c) => {
                     println!("{:?}", c);
 
-                    c.save_in_p8(&matches.opt_str("t").unwrap());
+                    c.save_in_p8(&matches.opt_str("t").unwrap(),
+                                 format!("{:?}.{:?}.{:?}", VERSION, MAJOR_VERSION, MINOR_VERSION)
+                                     .as_str());
                 }
                 Err(e) => panic!(e),
             }

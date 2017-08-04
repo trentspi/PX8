@@ -26,18 +26,21 @@ pub struct Font {
     glyph_data: &'static [u8],
 }
 
-#[derive(Clone)]
+#[derive(Copy)]
 pub struct Sprite {
-    pub data: Vec<u8>,
+    pub data: [u8; 64],
     pub flags: u8,
 }
 
-impl Sprite {
-    pub fn new(d: [u8; 8 * 8]) -> Sprite {
-        let mut v = Vec::new();
-        v.extend(d.iter().cloned());
+impl Clone for Sprite {
+    fn clone(&self) -> Sprite {
+        *self
+    }
+}
 
-        Sprite { data: v, flags: 0 }
+impl Sprite {
+    pub fn new(d: [u8; 64]) -> Sprite {
+        Sprite { data: d, flags: 0 }
     }
 
     pub fn is_flags_set(&self, value: u8) -> bool {
@@ -68,20 +71,23 @@ impl Sprite {
         self.data[idx] = col;
     }
 
-    pub fn get_data(&self) -> String {
+    pub fn get_data(&mut self) -> String {
         let mut data = String::new();
 
-        for c in &self.data {
-            data.push_str(&format!("{:?}", c));
+        for (i, elem) in self.data.iter_mut().enumerate() {
+            data.push_str(&format!("{:?}", elem));
         }
 
         data
     }
 
-    pub fn get_line(&self, line: u32) -> String {
+    pub fn get_line(&mut self, line: u32) -> String {
+        let mut v = Vec::new();
+        v.extend(self.data.iter().cloned());
+
         let mut data = String::new();
 
-        let mut data_clone = self.data.clone();
+        let mut data_clone = v.clone();
 
         let data_line: Vec<_> = data_clone
             .drain((line * 8) as usize..(line * 8 + 8) as usize)
@@ -356,6 +362,7 @@ impl Screen {
         self.frame_buffer.copy_from_slice(&self.saved_frame_buffer);
     }
 
+    #[inline]
     pub fn _find_color(&mut self, col: i32) -> u32 {
         if col == -1 { self.color } else { col as u32 }
     }
@@ -388,10 +395,12 @@ impl Screen {
         }
     }
 
+    #[inline]
     pub fn pixel_offset(&self, x: i32, y: i32) -> usize {
         (x as usize) + ((y as usize) * self.width)
     }
 
+    #[inline]
     pub fn putpixel_direct(&mut self, x: i32, y: i32, col: u32) {
         if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
             return;
@@ -401,6 +410,7 @@ impl Screen {
         self.frame_buffer[offset] = col as u8;
     }
 
+    #[inline]
     pub fn putpixel_(&mut self, x: i32, y: i32, col: u32) {
         // Make camera adjustment
         let x = x - self.camera.x;
@@ -417,6 +427,7 @@ impl Screen {
         self.frame_buffer[offset] = draw_col;
     }
 
+    #[inline]
     pub fn color(&mut self, col: i32) {
         if (col >= 0) && (col <= 255) {
             self.color = col as u32;
@@ -434,10 +445,12 @@ impl Screen {
         }
     }
 
+    #[inline]
     pub fn putpixel(&mut self, x: i32, y: i32, col: u32) {
         self.putpixel_(x, y, col);
     }
 
+    #[inline]
     pub fn getpixel(&mut self, x: usize, y: usize) -> u32 {
         let x = (x as i32 - self.camera.x) as usize;
         let y = (y as i32 - self.camera.y) as usize;
@@ -512,10 +525,16 @@ impl Screen {
         self._print(string, x, y, col, true);
     }
 
+
+    pub fn print_char(&mut self, data: char, x: i32, y: i32, col: i32) {
+        self._print(data.to_string(), x, y, col, false);
+    }
+
     pub fn print(&mut self, string: String, x: i32, y: i32, col: i32) {
         self._print(string, x, y, col, false);
     }
 
+    #[inline]
     pub fn _print(&mut self, string: String, x: i32, y: i32, col: i32, force: bool) {
         let mut x = x;
         let y = y + self.font.top_bearing;
@@ -982,7 +1001,7 @@ impl Screen {
                        sprite);*/
 
                 let mut index = 0;
-                for c in &sprite.data {
+                for (_, c) in sprite.data.iter_mut().enumerate() {
                     if !self.is_transparent(*c as u32) {
                         self.putpixel_(new_x, new_y, *c as u32);
                     }
@@ -1052,14 +1071,14 @@ impl Screen {
 
                 // Skip the sprite 0
                 if idx_sprite != 0 {
-                    let sprite = self.sprites[idx_sprite as usize].clone();
+                    let mut sprite = self.sprites[idx_sprite as usize].clone();
                     //debug!("GET SPRITE {:?}, {:?} {:?}", idx_sprite, map_x, map_y);
 
                     // not the correct layer
                     if layer == 0 || sprite.is_bit_flags_set(layer) {
                         let mut index = 0;
 
-                        for c in &sprite.data {
+                        for (_, c) in sprite.data.iter_mut().enumerate() {
                             if !self.is_transparent(*c as u32) {
                                 self.putpixel_(new_x, new_y, *c as u32);
                             }
@@ -1209,6 +1228,7 @@ impl Screen {
         }
     }
 
+    #[inline]
     pub fn is_transparent(&self, value: u32) -> bool {
         if value <= 255 {
             self.transparency_map[value as usize]
