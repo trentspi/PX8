@@ -4,6 +4,26 @@ from math import frexp, copysign
 from sys import float_info
 
 # Audio
+# Chiptune
+def chiptune_play(filetype, filename, loops, start_position):
+    px8_audio.chiptune_play(filetype, filename, loops, start_position)
+
+def chiptune_stop(music=1, sound=1):
+    px8_audio.chiptune_stop(music, sound)
+
+def chiptune_pause(music=1, sound=1):
+    px8_audio.chiptune_pause(music, sound)
+
+def chiptune_resume(music=1, sound=1):
+    px8_audio.chiptune_resume(music, sound)
+
+def chiptune_volume(volume):
+    px8_audio.chiptune_volume(volume)
+
+def chiptune_position():
+    return px8_audio.chiptune_position()
+
+# Classic music
 def music_load(filename):
     return px8_audio.music_load(filename)
 
@@ -45,6 +65,13 @@ def sound_volume(volume, channel=-1):
 
 def sound_isplaying(channel=-1):
     return px8_audio.sound_isplaying(channel)
+
+globals()["chiptune_play"] = chiptune_play
+globals()["chiptune_stop"] = chiptune_stop
+globals()["chiptune_pause"] = chiptune_pause
+globals()["chiptune_resume"] = chiptune_resume
+globals()["chiptune_volume"] = chiptune_volume
+globals()["chiptune_position"] = chiptune_position
 
 globals()["music_load"] = music_load
 globals()["music_play"] = music_play

@@ -5,6 +5,7 @@
 WAV_FILE = "./examples/assets/piano.wav"
 SOUND_GUN_FILE = "./examples/assets/gun.wav"
 SOUND_FIREWORKS_FILE = "./examples/assets/fireworks.wav"
+KLYSTRACK_MUSIC = "./examples/assets/AmsterdamBoppe.kt"
 
 class Button(object):
     def __init__(self, x1, y1, x2, y2, color, text, highlight=False):
@@ -28,13 +29,27 @@ class Button(object):
     def is_click(self):
         return self.clicked
 
+class Text(object):
+    def __init__(self, x, y, color, text):
+        self.x = x
+        self.y = y
+        self.color = color
+        self.text = text
+
+    def update(self, x, y):
+        pass
+    
+    def draw(self):
+        px8_print(str(chiptune_position()), self.x, self.y, self.color)
+
 class InteractiveNumber(object):
-    def __init__(self, x, y, color):
+    def __init__(self, x, y, color, volume_fct):
         self.x = x
         self.y = y
         self.color = color
         self.value = 128
         self.text = 'Unknown'
+        self.volume_fct = volume_fct
 
         base_x_rect = self.x - 4
         base_y_rect = self.y - 4
@@ -56,21 +71,30 @@ class InteractiveNumber(object):
             self.value = min(128, self.value)
 
         if rect_min_clicked or rect_plus_clicked:
-            music_volume(self.value)
+            self.volume_fct(self.value)
 
     def draw(self):
         rectfill(self.rect_minus[0], self.rect_minus[1], self.rect_minus[2], self.rect_minus[3], self.color)
         rectfill(self.rect_plus[0], self.rect_plus[1], self.rect_plus[2], self.rect_plus[3], self.color)
+        px8_print(str(self.value), self.rect_minus[0]-15, self.rect_minus[1]-4 , 7)
 
-
-MENU = {
-    'Volume': InteractiveNumber(18, 24, 7),
+WAV_MENU = {
+    'Volume': InteractiveNumber(18, 24, 7, music_volume),
     'Play': Button(20, 20, 40, 28, 7, 'Play'),
     'Stop': Button(42, 20, 62, 28, 7, 'Stop'),
     'Pause': Button(64, 20, 84, 28, 7, 'Pause'),
     'Resume': Button(86, 20, 110, 28, 7, 'Resume'),
     'Gun': Button(20, 30, 40, 38, 7, 'Gun'),
     'Fireworks': Button(42, 30, 80, 38, 7, 'Fireworks'),
+}
+
+CHIPTUNE_MENU = {
+    'Volume': InteractiveNumber(18, 74, 7, chiptune_volume),
+    'Play': Button(20, 70, 40, 78, 7, 'Play'),
+    'Stop': Button(42, 70, 62, 78, 7, 'Stop'),
+    'Pause': Button(64, 70, 84, 78, 7, 'Pause'),
+    'Resume': Button(86, 70, 110, 78, 7, 'Resume'),
+    'Position': Text(8, 80, 7, 'Position'),
 }
 
 def _init():
@@ -83,7 +107,7 @@ def _update():
     if mouse_state():
         mousex, mousey = mouse_x(), mouse_y()
 
-        for item in MENU.values():
+        for item in WAV_MENU.values():
             item.update(mousex, mousey)
             if item.text =='Play' and item.is_click():
                 print("Play")
@@ -104,10 +128,22 @@ def _update():
                 print("Play fireworks sound")
                 sound_play(SOUND_FIREWORKS_FILE)
 
+        for item in CHIPTUNE_MENU.values():
+            item.update(mousex, mousey)
+            if item.text =='Play' and item.is_click():
+                chiptune_play(0, KLYSTRACK_MUSIC, 0, 0)
+            elif item.text =='Stop' and item.is_click():
+                chiptune_stop()
+            elif item.text =='Pause' and item.is_click():
+                chiptune_pause()
+            elif item.text =='Resume' and item.is_click():
+                chiptune_resume()
+
 def _draw():
     cls()
 
-    for item in MENU.values():
+    px8_print("WAV", 10, 10, 7)
+    for item in WAV_MENU.values():
         item.draw()
 
     idx = 10
@@ -116,4 +152,8 @@ def _draw():
         color = 7
         if is_playing:
             color = 8
-        circfill(idx+i*5, 100, 1, color)
+        circfill(idx+i*5, 50, 1, color)
+
+    px8_print("CHIPTUNE", 10, 60, 7)
+    for item in CHIPTUNE_MENU.values():
+        item.draw()
